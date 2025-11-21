@@ -105,7 +105,34 @@ function Wardrobe() {
       );
    };
 
+   const handleDeleteClothes = async () => {
+      if (selectedItems.length === 0) {
+         alert("Please select at least one item to delete.");
+         return;
+      }
 
+      if (!window.confirm("Are you sure you want to delete them?")) return;
+
+      try {
+         const res = await fetch(`${API_URL}/delete_clothes`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ items: selectedItems }), // List of image_path values
+         });
+
+         const data = await res.json();
+         console.log("Delete response:", data);
+
+         // Remove deleted items from UI
+         setWardrobeData((prev) =>
+            prev.filter((item) => !selectedItems.includes(item.image_path))
+         );
+         setSelectedItems([]);
+
+      } catch (err) {
+         console.error("Delete failed:", err);
+      }
+   };
 
    const capitalizeWords = (text) =>
       text
@@ -167,6 +194,25 @@ function Wardrobe() {
                         <span>({selectedItems.length})</span>
                      )}
                   </motion.button>
+
+                  <motion.button
+                     className="btn px-5 py-3 fw-semibold ms-2"
+                     style={{
+                        backgroundColor: "#ff4d4d",
+                        border: "none",
+                        borderRadius: "16px",
+                        color: "white",
+                        fontSize: "1rem",
+                        boxShadow: "0 4px 15px rgba(255, 0, 0, 0.3)",
+                     }}
+                     whileHover={{ scale: 1.05, backgroundColor: "#e60000" }}
+                     transition={{ duration: 0.3 }}
+                     onClick={handleDeleteClothes}
+                  >
+                     Delete Selected {selectedItems.length > 0 && <span>({selectedItems.length})</span>}
+                  </motion.button>
+
+
                </div>
 
                <div
