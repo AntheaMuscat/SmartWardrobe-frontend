@@ -10,7 +10,7 @@ function AddClothes() {
    const [color, setColor] = useState("#ffffff");
    const [message, setMessage] = useState("");
 
-   const PI_URL = "http://192.168.0.16:8000"; // Raspberry Pi IP
+   const PI_URL = "http://10.124.220.140:8000"; // Raspberry Pi IP
 
    useEffect(() => {
       const fetchHumidity = async () => {
