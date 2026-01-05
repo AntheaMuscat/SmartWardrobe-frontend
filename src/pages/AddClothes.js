@@ -70,23 +70,37 @@ function AddClothes() {
    };
 
    const setLed = async (newColor = color, newBrightness = brightness) => {
-      setColor(newColor);
+      // 👈 Convert hex to RGB BEFORE sending
+      const rgb = hexToRgb(newColor || color);
+      setColor(newColor || color);
       setBrightness(newBrightness);
-      const rgb = hexToRgb(newColor);
+
       try {
-         await fetch(`${PI_URL}/led`, {
+         const response = await fetch(`${PI_URL}/led`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ color: rgb, brightness: newBrightness }),
+            body: JSON.stringify({
+               color: rgb,  // 👈 Always RGB array [255,0,0]
+               brightness: newBrightness
+            }),
          });
-      } catch {
-         toast.error("Failed to update LED.");
+
+         if (!response.ok) throw new Error('LED update failed');
+         toast.success("LED updated! ✨");
+      } catch (err) {
+         console.error("LED Error:", err);
+         toast.error("Failed to update LED. Check Pi connection.");
       }
    };
 
+   // Move hexToRgb above the return (it's already there but ensure it's called)
    const hexToRgb = (hex) => {
       const bigint = parseInt(hex.slice(1), 16);
-      return [(bigint >> 16) & 255, (bigint >> 8) & 255, bigint & 255];
+      return [
+         (bigint >> 16) & 255,  // R
+         (bigint >> 8) & 255,   // G
+         bigint & 255           // B
+      ];
    };
 
    return (
@@ -227,13 +241,14 @@ function AddClothes() {
                   <input
                      type="color"
                      value={color}
-                     onChange={(e) => setLed(e.target.value)}
+                     onChange={(e) => setLed(e.target.value)}  // 👈 This now works
                      style={{
                         marginBottom: "1rem",
                         width: "60%",
                         height: "40px",
                         border: "none",
                         cursor: "pointer",
+                        borderRadius: "8px",
                      }}
                   />
                   <input
@@ -242,9 +257,7 @@ function AddClothes() {
                      max="1"
                      step="0.05"
                      value={brightness}
-                     onChange={(e) =>
-                        setLed(undefined, parseFloat(e.target.value))
-                     }
+                     onChange={(e) => setLed(color, parseFloat(e.target.value))}  // 👈 Pass color too
                      style={{ width: "100%" }}
                   />
                </div>
