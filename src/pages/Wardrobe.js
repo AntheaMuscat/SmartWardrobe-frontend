@@ -20,6 +20,23 @@ function Wardrobe() {
 
    const API_URL = "https://antheamuscat-smart-wardrobe-backend.hf.space";
 
+   // Backend type arrays
+   const topTypes = [
+      "t-shirt", "long-sleeve t-shirt", "sleeveless tank top", "hoodie",
+      "blouse", "button-up shirt", "denim jacket", "leather jacket",
+      "sweater", "cardigan", "polo shirt", "v-neck shirt",
+      "crew neck t-shirt", "turtleneck", "off-shoulder top",
+      "cropped top", "fitted shirt", "loose hoodie"
+   ];
+   const bottomTypes = [
+      "trousers", "jeans", "shorts", "cargo pants", "sweatpants",
+      "mini skirt", "midi skirt", "maxi skirt", "pencil skirt", "pleated skirt"
+   ];
+   const dressTypes = ["dress", "summer dress", "cocktail dress", "maxi dress", "jumpsuit", "overalls"];
+   const outerwearTypes = ["jacket", "coat", "blazer"];
+   const shoeTypes = ["shoes", "sneakers", "boots"];
+   const accessoryTypes = ["scarf", "hat", "belt", "bag", "watch"];
+
    useEffect(() => {
       console.log("Fetching wardrobe...");
       fetch(`${API_URL}/wardrobe`, {
@@ -33,7 +50,7 @@ function Wardrobe() {
                date_added: item.date_added,
                image_path: item.image_path,
                material: item.material,
-               type: item.type,
+               type: item.type.toLowerCase(), // lowercase for matching
                style: item.style,
             }));
 
@@ -55,38 +72,14 @@ function Wardrobe() {
    const scrollToSection = (ref) =>
       ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
 
-   // Categorize items
+   // Categorize items based on backend types
    const categorized = {
-      Tops: wardrobeData.filter((item) =>
-         ["shirt", "t-shirt", "blouse", "hoodie", "sweater", "top"].some((t) =>
-            item.type?.toLowerCase().includes(t)
-         )
-      ),
-      Bottoms: wardrobeData.filter((item) =>
-         ["jeans", "trousers", "shorts", "skirt", "pants"].some((t) =>
-            item.type?.toLowerCase().includes(t)
-         )
-      ),
-      Dresses: wardrobeData.filter((item) =>
-         ["dress", "gown", "jumpsuit"].some((t) =>
-            item.type?.toLowerCase().includes(t)
-         )
-      ),
-      Outerwear: wardrobeData.filter((item) =>
-         ["jacket", "coat", "blazer"].some((t) =>
-            item.type?.toLowerCase().includes(t)
-         )
-      ),
-      Shoes: wardrobeData.filter((item) =>
-         ["shoes", "sneakers", "boots"].some((t) =>
-            item.type?.toLowerCase().includes(t)
-         )
-      ),
-      Accessories: wardrobeData.filter((item) =>
-         ["scarf", "hat", "belt", "bag", "watch"].some((t) =>
-            item.type?.toLowerCase().includes(t)
-         )
-      ),
+      Tops: wardrobeData.filter((item) => topTypes.includes(item.type)),
+      Bottoms: wardrobeData.filter((item) => bottomTypes.includes(item.type)),
+      Dresses: wardrobeData.filter((item) => dressTypes.includes(item.type)),
+      Outerwear: wardrobeData.filter((item) => outerwearTypes.includes(item.type)),
+      Shoes: wardrobeData.filter((item) => shoeTypes.includes(item.type)),
+      Accessories: wardrobeData.filter((item) => accessoryTypes.includes(item.type)),
    };
 
    const handleAddToCalendar = () => {
@@ -99,10 +92,7 @@ function Wardrobe() {
          selectedItems.includes(i.image_path)
       );
 
-      // Navigate to calendar with MULTIPLE outfits encoded in URL
-      navigate(
-         `/calendar?items=${encodeURIComponent(JSON.stringify(itemsToAdd))}`
-      );
+      navigate(`/calendar?items=${encodeURIComponent(JSON.stringify(itemsToAdd))}`);
    };
 
    const handleDeleteClothes = async () => {
@@ -117,18 +107,16 @@ function Wardrobe() {
          const res = await fetch(`${API_URL}/delete_clothes`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ items: selectedItems }), // List of image_path values
+            body: JSON.stringify({ items: selectedItems }),
          });
 
          const data = await res.json();
          console.log("Delete response:", data);
 
-         // Remove deleted items from UI
          setWardrobeData((prev) =>
             prev.filter((item) => !selectedItems.includes(item.image_path))
          );
          setSelectedItems([]);
-
       } catch (err) {
          console.error("Delete failed:", err);
       }
@@ -163,7 +151,6 @@ function Wardrobe() {
                padding: "3rem 2rem",
             }}
          >
-            {/* Header */}
             <div className="container mb-5">
                <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4">
                   <h1
@@ -172,6 +159,7 @@ function Wardrobe() {
                   >
                      My Wardrobe 👕
                   </h1>
+
                   <motion.button
                      className="btn px-5 py-3 fw-semibold"
                      style={{
@@ -182,17 +170,12 @@ function Wardrobe() {
                         fontSize: "1rem",
                         boxShadow: `0 4px 15px ${colors.shadow}`,
                      }}
-                     whileHover={{
-                        scale: 1.05,
-                        backgroundColor: colors.accent1,
-                     }}
+                     whileHover={{ scale: 1.05, backgroundColor: colors.accent1 }}
                      transition={{ duration: 0.3 }}
                      onClick={handleAddToCalendar}
                   >
                      Add Selected to Calendar{" "}
-                     {selectedItems.length > 0 && (
-                        <span>({selectedItems.length})</span>
-                     )}
+                     {selectedItems.length > 0 && <span>({selectedItems.length})</span>}
                   </motion.button>
 
                   <motion.button
@@ -211,14 +194,9 @@ function Wardrobe() {
                   >
                      Delete Selected {selectedItems.length > 0 && <span>({selectedItems.length})</span>}
                   </motion.button>
-
-
                </div>
 
-               <div
-                  className="d-flex flex-wrap justify-content-center gap-3 mb-5"
-                  style={{ color: "white" }}
-               >
+               <div className="d-flex flex-wrap justify-content-center gap-3 mb-5" style={{ color: "white" }}>
                   {[
                      { name: "Tops", ref: topsRef },
                      { name: "Bottoms", ref: bottomsRef },
@@ -238,10 +216,7 @@ function Wardrobe() {
                            color: "white",
                            transition: "all 0.3s ease",
                         }}
-                        whileHover={{
-                           scale: 1.05,
-                           backgroundColor: colors.accent1,
-                        }}
+                        whileHover={{ scale: 1.05, backgroundColor: colors.accent1 }}
                      >
                         {cat.name}
                      </motion.button>
@@ -277,27 +252,18 @@ function Wardrobe() {
                      >
                         <h2
                            className="fw-bold mb-4"
-                           style={{
-                              color: colors.primary,
-                              fontSize: "1.8rem",
-                              textAlign: "left",
-                           }}
+                           style={{ color: colors.primary, fontSize: "1.8rem", textAlign: "left" }}
                         >
                            {category}
                         </h2>
 
                         <div
                            className="d-grid"
-                           style={{
-                              gridTemplateColumns:
-                                 "repeat(auto-fill, minmax(250px, 1fr))",
-                              gap: "30px",
-                           }}
+                           style={{ gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: "30px" }}
                         >
                            {items.map((item) => {
                               const uniqueKey = item.image_path;
-                              const isSelected =
-                                 selectedItems.includes(uniqueKey);
+                              const isSelected = selectedItems.includes(uniqueKey);
 
                               return (
                                  <motion.div
@@ -310,13 +276,11 @@ function Wardrobe() {
                                           ? "0 8px 24px rgba(0,172,193,0.35)"
                                           : "0 8px 20px rgba(0,0,0,0.1)",
                                        cursor: "pointer",
-                                       transform: isSelected
-                                          ? "scale(1.03)"
-                                          : "scale(1)",
+                                       transform: isSelected ? "scale(1.03)" : "scale(1)",
                                        transition: "all 0.3s ease",
                                        position: "relative",
                                     }}
-                                    whileHover={{ scale: 1.04 }}
+                                    whileHover={{ scale: 1.02 }}
                                  >
                                     <div
                                        style={{
@@ -327,11 +291,8 @@ function Wardrobe() {
                                           height: "20px",
                                           borderRadius: "50%",
                                           border: "2px solid rgba(0,0,0,0.6)",
-                                          backgroundColor: isSelected
-                                             ? colors.primary
-                                             : "transparent",
-                                          transition:
-                                             "background-color 0.3s ease",
+                                          backgroundColor: isSelected ? colors.primary : "transparent",
+                                          transition: "background-color 0.3s ease",
                                        }}
                                     ></div>
 
@@ -347,35 +308,23 @@ function Wardrobe() {
                                           borderRadius: "12px",
                                           padding: "10px",
                                        }}
-                                       whileHover={{ scale: 1.02 }}
                                     />
 
                                     <h5
                                        className="fw-bold mb-2"
-                                       style={{
-                                          color: colors.primary,
-                                          textTransform: "capitalize",
-                                       }}
+                                       style={{ color: colors.primary, textTransform: "capitalize" }}
                                     >
-                                       {capitalizeWords(item.type)}
+                                       {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
                                     </h5>
                                     <p
                                        className="mb-1"
-                                       style={{
-                                          color: "#555",
-                                          textTransform: "capitalize",
-                                       }}
+                                       style={{ color: "#555", textTransform: "capitalize" }}
                                     >
-                                       {capitalizeWords(
-                                          `${item.colour} ${item.material}`
-                                       )}
+                                       {`${item.colour} ${item.material}`}
                                     </p>
                                     <p
                                        className="mb-0"
-                                       style={{
-                                          fontSize: "0.9rem",
-                                          color: "#888",
-                                       }}
+                                       style={{ fontSize: "0.9rem", color: "#888" }}
                                     >
                                        Date Added: {formatDate(item.date_added)}
                                     </p>
