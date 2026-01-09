@@ -87,160 +87,118 @@ function Home() {
    }, []);
 
    const fetchAllOutfits = (weatherCondition) => {
-      fetch(`https://antheamuscat-smart-wardrobe-backend.hf.space/outfits`)
-         .then(res => res.json())
-         .then(data => {
-            const grouped = data.outfit_suggestions || {};
-
-            const styles = ["all", ...Object.keys(grouped).map(s => s.toLowerCase())];
-            setAvailableStyles(styles);
-
-            const styleKey =
-               selectedStyle === "all"
-                  ? Object.keys(grouped)[0]
-                  : selectedStyle.charAt(0).toUpperCase() + selectedStyle.slice(1);
-
-            const outfits = grouped[styleKey] || [];
-
+      fetch(`https://antheamuscat-smart-wardrobe-backend.hf.space/wardrobe`)
+         .then((res) => res.json())
+         .then((data) => {
+            const outfits = data.outfits || [];
             setAllOutfits(outfits);
-            pickWeatherAppropriateOutfit(
-               outfits,
-               weatherCondition,
-               selectedStyle,
-               weatherData?.temperature
+
+            const styles = new Set(["all"]);
+            outfits.forEach((pair) =>
+               pair.forEach((item) => {
+                  if (item?.style) styles.add(item.style.toLowerCase());
+               })
             );
 
+            setAvailableStyles([...styles]);
+            pickWeatherAppropriateOutfit(outfits, weatherCondition, selectedStyle);
          })
-
-         .catch(err => {
+         .catch((err) => {
             console.error("Outfit fetch error:", err);
+            setAllOutfits([]);
             setOutfitData(null);
          });
    };
 
-   const normalize = (t = "") => t.toLowerCase();
-
-   const coldForbidden = [
-      "shorts",
-      "mini",
-      "tank",
-      "sleeveless",
-      "cropped",
-      "halter"
-   ];
-
-   const heavyForbidden = [
-      "hoodie",
-      "coat",
-      "puffer",
-      "fleece"
-   ];
-
-
    // Select outfit based on weather and style
-   const pickWeatherAppropriateOutfit = (outfits, weatherCondition, style, temperature) => {
+   const pickWeatherAppropriateOutfit = (outfits, weatherCondition, style) => {
       if (!outfits || outfits.length === 0) {
          setOutfitData(null);
          return;
       }
 
-      const temp = temperature ?? 20;
+      const temp = weatherData?.temperature || 20;
       const isHot = temp >= 25;
       const isCold = temp <= 18;
       const isMild = temp > 18 && temp < 25;
       const isRainy = weatherCondition === "rainy";
 
-      const normalize = (t = "") => t.toLowerCase();
-
-      // 🔧 FIXED VERSION - Much more lenient + blocks your shorts/mini skirt
+      //match both weather and selected style
       let filtered = outfits.filter((pair) => {
          const items = pair.filter(Boolean);
          if (items.length === 0) return false;
 
-         // 1. PERMANENT BLOCK: Never show shorts or mini skirt
-         const hasSummerItems = items.some(i => {
-            const t = normalize(i.type);
-            return t.includes("shorts") || t.includes("mini");
-         });
-         if (hasSummerItems) return false;
-
-         // 2. Match selected style
+         // Match selected style
          if (style !== "all") {
             const matches = items.some((i) => i.style?.toLowerCase() === style);
             if (!matches) return false;
          }
 
-         // 3. Much softer weather rules (your jeans will survive!)
-         if (items.length === 2) {
-            const hasTop = items.some(i =>
-               /(shirt|t-shirt|long-sleeve|blouse|top|turtleneck|button-up|polo|sweater|cardigan)/i
-                  .test(i.type)
-            );
-            const hasBottom = items.some(i =>
-               /(jeans|trousers|pants|cargo|sweatpants|skirt)/i.test(i.type)  // skirts OK now
-            );
-            if (!hasTop || !hasBottom) return false;
-         }
+         // Weather rules
+         const isDressOutfit = items.length === 1 && /dress|jumpsuit/i.test(items[0].type);
+         if (isDressOutfit) return true;
 
-         // Cold weather - only block REALLY light stuff (not mini skirts anymore)
-         if (isCold) {
-            const tooLight = items.some(i => {
-               const t = normalize(i.type);
-               return /sleeveless|tank|halter/i.test(t);  // Much shorter list!
-            });
+         if (!isHot) {
+            const tooLight = items.some((i) =>
+               /(shorts|mini|tank|sleeveless|crop|halter)/i.test(i.type)
+            );
             if (tooLight) return false;
          }
 
-         // Hot weather
-         if (isHot) {
-            const tooHeavy = items.some(i => {
-               const t = normalize(i.type);
-               return /hoodie|coat|puffer|fleece/i.test(t);
-            });
+         if (!isCold) {
+            const tooHeavy = items.some((i) =>
+               /(hoodie|coat|puffer|fleece|thick)/i.test(i.type)
+            );
             if (tooHeavy) return false;
          }
 
-         // Rainy - only block super exposed
          if (isRainy) {
-            const tooExposed = items.some(i =>
-               /shorts|summer dress/i.test(normalize(i.type))
-            );
-            if (tooExposed) return false;
+            const exposed = items.some((i) => /(shorts|mini skirt)/i.test(i.type));
+            if (exposed) return false;
          }
 
-         // Mild - almost everything passes
+         if (isMild) {
+            const balanced = items.some((i) =>
+               /(shirt|t-shirt|trousers|jeans|cargo|blouse|long-sleeve|light)/i.test(i.type)
+            );
+            if (!balanced) return false;
+         }
+
          return true;
       });
 
-      // 4. If no weather matches, fallback to style-only (much better logic)
+      //if none match weather, just match color and style
       if (filtered.length === 0) {
-         console.log("No perfect weather match, using style fallback...");
+         console.warn("No weather-appropriate outfit found. Using fallback...");
 
          filtered = outfits.filter((pair) => {
             const items = pair.filter(Boolean);
             if (items.length < 1) return false;
 
-            // Block shorts/mini even in fallback
-            const hasSummerItems = items.some(i => {
-               const t = normalize(i.type);
-               return t.includes("shorts") || t.includes("mini");
-            });
-            if (hasSummerItems) return false;
-
-            // Match style
+            // Match style if selected
             if (style !== "all") {
                const matches = items.some((i) => i.style?.toLowerCase() === style);
                if (!matches) return false;
             }
 
-            return true;  // Accept ANY style-matching outfit
+            //avoid identical or clashing pairs
+            if (items.length === 2) {
+               const c1 = items[0].colour?.toLowerCase() || "";
+               const c2 = items[1].colour?.toLowerCase() || "";
+               const same = c1 === c2;
+               const clash = /red|green|purple/.test(c1) && /red|green|purple/.test(c2);
+               if (same || clash) return false;
+            }
+
+            return true;
          });
       }
 
-      // 5. Final pick
-      const chosen = filtered.length > 0
-         ? filtered[Math.floor(Math.random() * filtered.length)]
-         : outfits[Math.floor(Math.random() * outfits.length)];
+      //if still nothing, pick any random outfit
+      const chosen =
+         filtered.length > 0
+            ? filtered[Math.floor(Math.random() * filtered.length)]
+            : outfits[Math.floor(Math.random() * outfits.length)];
 
       setOutfitData(chosen);
    };
@@ -248,19 +206,13 @@ function Home() {
 
    useEffect(() => {
       if (allOutfits.length > 0 && weatherData) {
-         pickWeatherAppropriateOutfit(
-            allOutfits,
-            weatherData.condition,
-            selectedStyle,
-            weatherData.temperature
-         );
+         pickWeatherAppropriateOutfit(allOutfits, weatherData.condition, selectedStyle);
       }
    }, [selectedStyle, allOutfits, weatherData]);
 
-
    //Weather suggestion
    const getWeatherSuggestion = (temp, condition) => {
-      if (temp <= 18) return "❄️ A chilly day — grab a warm sweater or coat!";
+      if (temp <= 12) return "❄️ A chilly day — grab a warm sweater or coat!";
       if (temp >= 25) return "☀️ Perfect sunny weather — light and breathable clothes!";
       if (condition === "rainy")
          return "🌧 Rain expected — a light jacket or umbrella is your best friend.";
