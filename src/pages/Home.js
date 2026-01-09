@@ -87,28 +87,45 @@ function Home() {
    }, []);
 
    const fetchAllOutfits = (weatherCondition) => {
-      fetch(`https://antheamuscat-smart-wardrobe-backend.hf.space/wardrobe`)
-         .then((res) => res.json())
-         .then((data) => {
-            const outfits = data.outfits || [];
+      fetch(`https://antheamuscat-smart-wardrobe-backend.hf.space/outfits`)
+         .then(res => res.json())
+         .then(data => {
+            const grouped = data.outfit_suggestions || {};
+
+            const styleKey =
+               selectedStyle === "all"
+                  ? Object.keys(grouped)[0]
+                  : selectedStyle.charAt(0).toUpperCase() + selectedStyle.slice(1);
+
+            const outfits = grouped[styleKey] || [];
+
             setAllOutfits(outfits);
-
-            const styles = new Set(["all"]);
-            outfits.forEach((pair) =>
-               pair.forEach((item) => {
-                  if (item?.style) styles.add(item.style.toLowerCase());
-               })
-            );
-
-            setAvailableStyles([...styles]);
             pickWeatherAppropriateOutfit(outfits, weatherCondition, selectedStyle);
          })
-         .catch((err) => {
+         .catch(err => {
             console.error("Outfit fetch error:", err);
-            setAllOutfits([]);
             setOutfitData(null);
          });
    };
+
+   const normalize = (t = "") => t.toLowerCase();
+
+   const coldForbidden = [
+      "shorts",
+      "mini",
+      "tank",
+      "sleeveless",
+      "cropped",
+      "halter"
+   ];
+
+   const heavyForbidden = [
+      "hoodie",
+      "coat",
+      "puffer",
+      "fleece"
+   ];
+
 
    // Select outfit based on weather and style
    const pickWeatherAppropriateOutfit = (outfits, weatherCondition, style) => {
@@ -128,6 +145,16 @@ function Home() {
          const items = pair.filter(Boolean);
          if (items.length === 0) return false;
 
+         if (items.length === 2) {
+            const hasTop = items.some(i =>
+               /(shirt|t-shirt|blouse|top|turtleneck)/i.test(i.type)
+            );
+            const hasBottom = items.some(i =>
+               /(jeans|trousers|skirt|pants)/i.test(i.type)
+            );
+            if (!hasTop || !hasBottom) return false;
+         }
+         
          // Match selected style
          if (style !== "all") {
             const matches = items.some((i) => i.style?.toLowerCase() === style);
@@ -138,19 +165,20 @@ function Home() {
          const isDressOutfit = items.length === 1 && /dress|jumpsuit/i.test(items[0].type);
          if (isDressOutfit) return true;
 
-         if (!isHot) {
-            const tooLight = items.some((i) =>
-               /(shorts|mini|tank|sleeveless|crop|halter)/i.test(i.type)
+         if (isCold) {
+            const bad = items.some(i =>
+               coldForbidden.some(b => normalize(i.type).includes(b))
             );
-            if (tooLight) return false;
+            if (bad) return false;
          }
 
-         if (!isCold) {
-            const tooHeavy = items.some((i) =>
-               /(hoodie|coat|puffer|fleece|thick)/i.test(i.type)
+         if (isHot) {
+            const tooHeavy = items.some(i =>
+               heavyForbidden.some(h => normalize(i.type).includes(h))
             );
             if (tooHeavy) return false;
          }
+
 
          if (isRainy) {
             const exposed = items.some((i) => /(shorts|mini skirt)/i.test(i.type));
