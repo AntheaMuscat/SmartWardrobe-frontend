@@ -46,7 +46,7 @@ function Home() {
 
             let condition = "mild";
             if (weatherMain.includes("rain")) condition = "rainy";
-            else if (temp <= 12) condition = "cold";
+            else if (temp <= 18) condition = "cold";
             else if (temp >= 25) condition = "hot";
             else condition = "mild";
 
@@ -212,7 +212,7 @@ function Home() {
 
    //Weather suggestion
    const getWeatherSuggestion = (temp, condition) => {
-      if (temp <= 12) return "❄️ A chilly day — grab a warm sweater or coat!";
+      if (temp <= 18) return "❄️ A chilly day — grab a warm sweater or coat!";
       if (temp >= 25) return "☀️ Perfect sunny weather — light and breathable clothes!";
       if (condition === "rainy")
          return "🌧 Rain expected — a light jacket or umbrella is your best friend.";
