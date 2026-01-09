@@ -150,102 +150,97 @@ function Home() {
       const isMild = temp > 18 && temp < 25;
       const isRainy = weatherCondition === "rainy";
 
-      //match both weather and selected style
+      const normalize = (t = "") => t.toLowerCase();
+
+      // 🔧 FIXED VERSION - Much more lenient + blocks your shorts/mini skirt
       let filtered = outfits.filter((pair) => {
          const items = pair.filter(Boolean);
          if (items.length === 0) return false;
 
-         if (items.length === 2) {
-            const hasTop = items.some(i =>
-               /(shirt|t-shirt|long-sleeve|blouse|top|turtleneck|button-up|polo|sweater|cardigan)/i
-                  .test(i.type)
-            );
+         // 1. PERMANENT BLOCK: Never show shorts or mini skirt
+         const hasSummerItems = items.some(i => {
+            const t = normalize(i.type);
+            return t.includes("shorts") || t.includes("mini");
+         });
+         if (hasSummerItems) return false;
 
-            const hasBottom = items.some(i =>
-               /(jeans|trousers|pants|cargo|sweatpants|shorts|skirt)/i
-                  .test(i.type)
-            );
-
-            if (!hasTop || !hasBottom) return false;
-         }
-
-         // Match selected style
+         // 2. Match selected style
          if (style !== "all") {
             const matches = items.some((i) => i.style?.toLowerCase() === style);
             if (!matches) return false;
          }
 
-         // Weather rules
-         const isDressOutfit = items.length === 1 && /dress|jumpsuit/i.test(items[0].type);
-         if (isDressOutfit) {
-            if (isCold && /summer/i.test(items[0].type)) return false;
-            if (isRainy && /mini|summer/i.test(items[0].type)) return false;
-            return true;
+         // 3. Much softer weather rules (your jeans will survive!)
+         if (items.length === 2) {
+            const hasTop = items.some(i =>
+               /(shirt|t-shirt|long-sleeve|blouse|top|turtleneck|button-up|polo|sweater|cardigan)/i
+                  .test(i.type)
+            );
+            const hasBottom = items.some(i =>
+               /(jeans|trousers|pants|cargo|sweatpants|skirt)/i.test(i.type)  // skirts OK now
+            );
+            if (!hasTop || !hasBottom) return false;
          }
 
-
+         // Cold weather - only block REALLY light stuff (not mini skirts anymore)
          if (isCold) {
-            const bad = items.some(i =>
-               coldForbidden.some(b => normalize(i.type).includes(b))
-            );
-            if (bad) return false;
+            const tooLight = items.some(i => {
+               const t = normalize(i.type);
+               return /sleeveless|tank|halter/i.test(t);  // Much shorter list!
+            });
+            if (tooLight) return false;
          }
 
+         // Hot weather
          if (isHot) {
-            const tooHeavy = items.some(i =>
-               heavyForbidden.some(h => normalize(i.type).includes(h))
-            );
+            const tooHeavy = items.some(i => {
+               const t = normalize(i.type);
+               return /hoodie|coat|puffer|fleece/i.test(t);
+            });
             if (tooHeavy) return false;
          }
 
-
+         // Rainy - only block super exposed
          if (isRainy) {
-            const exposed = items.some((i) => /(shorts|mini skirt)/i.test(i.type));
-            if (exposed) return false;
-         }
-
-         if (isMild) {
-            const balanced = items.some((i) =>
-               /(shirt|t-shirt|trousers|jeans|cargo|blouse|long-sleeve|light)/i.test(i.type)
+            const tooExposed = items.some(i =>
+               /shorts|summer dress/i.test(normalize(i.type))
             );
-            if (!balanced) return false;
+            if (tooExposed) return false;
          }
 
+         // Mild - almost everything passes
          return true;
       });
 
-      //if none match weather, just match color and style
+      // 4. If no weather matches, fallback to style-only (much better logic)
       if (filtered.length === 0) {
-         console.warn("No weather-appropriate outfit found. Using fallback...");
+         console.log("No perfect weather match, using style fallback...");
 
          filtered = outfits.filter((pair) => {
             const items = pair.filter(Boolean);
             if (items.length < 1) return false;
 
-            // Match style if selected
+            // Block shorts/mini even in fallback
+            const hasSummerItems = items.some(i => {
+               const t = normalize(i.type);
+               return t.includes("shorts") || t.includes("mini");
+            });
+            if (hasSummerItems) return false;
+
+            // Match style
             if (style !== "all") {
                const matches = items.some((i) => i.style?.toLowerCase() === style);
                if (!matches) return false;
             }
 
-            //avoid identical or clashing pairs
-            if (items.length === 2) {
-               const c1 = items[0].colour?.toLowerCase() || "";
-               const c2 = items[1].colour?.toLowerCase() || "";
-               const same = c1 === c2;
-               const clash = /red|green|purple/.test(c1) && /red|green|purple/.test(c2);
-               if (same || clash) return false;
-            }
-
-            return true;
+            return true;  // Accept ANY style-matching outfit
          });
       }
 
-      //if still nothing, pick any random outfit
-      const chosen =
-         filtered.length > 0
-            ? filtered[Math.floor(Math.random() * filtered.length)]
-            : outfits[Math.floor(Math.random() * outfits.length)];
+      // 5. Final pick
+      const chosen = filtered.length > 0
+         ? filtered[Math.floor(Math.random() * filtered.length)]
+         : outfits[Math.floor(Math.random() * outfits.length)];
 
       setOutfitData(chosen);
    };
