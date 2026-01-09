@@ -119,8 +119,8 @@ function Home() {
 
       const temp = weatherData?.temperature || 20;
       const isHot = temp >= 25;
-      const isCold = temp <= 12;
-      const isMild = temp > 12 && temp < 25;
+      const isCold = temp <= 18;
+      const isMild = temp > 18 && temp < 25;
       const isRainy = weatherCondition === "rainy";
 
       //match both weather and selected style
