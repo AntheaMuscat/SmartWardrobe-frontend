@@ -254,14 +254,14 @@ function Home() {
    useEffect(() => {
       if (allOutfits.length > 0 && weatherData) {
          pickWeatherAppropriateOutfit(
-            outfits,
-            weatherCondition,
+            allOutfits,
+            weatherData.condition,
             selectedStyle,
-            weatherData?.temperature
+            weatherData.temperature
          );
-
       }
    }, [selectedStyle, allOutfits, weatherData]);
+
 
    //Weather suggestion
    const getWeatherSuggestion = (temp, condition) => {
