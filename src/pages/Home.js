@@ -103,7 +103,13 @@ function Home() {
             const outfits = grouped[styleKey] || [];
 
             setAllOutfits(outfits);
-            pickWeatherAppropriateOutfit(outfits, weatherCondition, selectedStyle);
+            pickWeatherAppropriateOutfit(
+               outfits,
+               weatherCondition,
+               selectedStyle,
+               weatherData?.temperature
+            );
+
          })
 
          .catch(err => {
@@ -132,13 +138,13 @@ function Home() {
 
 
    // Select outfit based on weather and style
-   const pickWeatherAppropriateOutfit = (outfits, weatherCondition, style) => {
+   const pickWeatherAppropriateOutfit = (outfits, weatherCondition, style, temperature) => {
       if (!outfits || outfits.length === 0) {
          setOutfitData(null);
          return;
       }
 
-      const temp = weatherData?.temperature || 20;
+      const temp = temperature ?? 20;
       const isHot = temp >= 25;
       const isCold = temp <= 18;
       const isMild = temp > 18 && temp < 25;
@@ -171,7 +177,12 @@ function Home() {
 
          // Weather rules
          const isDressOutfit = items.length === 1 && /dress|jumpsuit/i.test(items[0].type);
-         if (isDressOutfit) return true;
+         if (isDressOutfit) {
+            if (isCold && /summer/i.test(items[0].type)) return false;
+            if (isRainy && /mini|summer/i.test(items[0].type)) return false;
+            return true;
+         }
+
 
          if (isCold) {
             const bad = items.some(i =>
@@ -242,7 +253,13 @@ function Home() {
 
    useEffect(() => {
       if (allOutfits.length > 0 && weatherData) {
-         pickWeatherAppropriateOutfit(allOutfits, weatherData.condition, selectedStyle);
+         pickWeatherAppropriateOutfit(
+            outfits,
+            weatherCondition,
+            selectedStyle,
+            weatherData?.temperature
+         );
+
       }
    }, [selectedStyle, allOutfits, weatherData]);
 
