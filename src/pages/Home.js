@@ -92,6 +92,9 @@ function Home() {
          .then(data => {
             const grouped = data.outfit_suggestions || {};
 
+            const styles = ["all", ...Object.keys(grouped).map(s => s.toLowerCase())];
+            setAvailableStyles(styles);
+
             const styleKey =
                selectedStyle === "all"
                   ? Object.keys(grouped)[0]
@@ -102,6 +105,7 @@ function Home() {
             setAllOutfits(outfits);
             pickWeatherAppropriateOutfit(outfits, weatherCondition, selectedStyle);
          })
+
          .catch(err => {
             console.error("Outfit fetch error:", err);
             setOutfitData(null);
@@ -147,14 +151,18 @@ function Home() {
 
          if (items.length === 2) {
             const hasTop = items.some(i =>
-               /(shirt|t-shirt|blouse|top|turtleneck)/i.test(i.type)
+               /(shirt|t-shirt|long-sleeve|blouse|top|turtleneck|button-up|polo|sweater|cardigan)/i
+                  .test(i.type)
             );
+
             const hasBottom = items.some(i =>
-               /(jeans|trousers|skirt|pants)/i.test(i.type)
+               /(jeans|trousers|pants|cargo|sweatpants|shorts|skirt)/i
+                  .test(i.type)
             );
+
             if (!hasTop || !hasBottom) return false;
          }
-         
+
          // Match selected style
          if (style !== "all") {
             const matches = items.some((i) => i.style?.toLowerCase() === style);
