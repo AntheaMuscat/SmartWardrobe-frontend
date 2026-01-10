@@ -52,9 +52,6 @@ function AddClothes() {
 
          setMessage(`Captured: ${data.file}`);
 
-         // Refresh wardrobe after success
-         fetchWardrobe(); // Add your wardrobe refresh function here if you have one
-
          toast.update(toastId, {
             render: `Added: ${data.type} (${(data.confidence * 100).toFixed(0)}% confidence)`,
             type: "success",
