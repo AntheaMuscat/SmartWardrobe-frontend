@@ -35,7 +35,9 @@ function Wardrobe() {
    const dressTypes = ["dress", "summer dress", "cocktail dress", "maxi dress", "jumpsuit", "overalls"];
    const outerwearTypes = ["jacket", "coat", "blazer"];
    const shoeTypes = ["shoes", "sneakers", "boots"];
-   const accessoryTypes = ["scarf", "hat", "belt", "bag", "watch"];
+   const accessoryTypes = ["hat", "cap", "beanie", "scarf", "belt", "handbag", "backpack",
+      "sunglasses", "watch", "tie", "socks", "gloves", "jewelry", "earrings"
+   ];
 
    useEffect(() => {
       console.log("Fetching wardrobe...");
