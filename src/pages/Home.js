@@ -110,91 +110,69 @@ function Home() {
          });
    };
 
-   // Select outfit based on weather and style
    const pickWeatherAppropriateOutfit = (outfits, weatherCondition, style) => {
       if (!outfits || outfits.length === 0) {
          setOutfitData(null);
          return;
       }
 
-      const temp = weatherData?.temperature || 20;
-      const isHot = temp >= 25;
+      const temp = weatherData?.temperature ?? 20;
       const isCold = temp <= 18;
-      const isMild = temp > 18 && temp < 25;
-      const isRainy = weatherCondition === "rainy";
+      const isHot = temp >= 25;
 
-      //match both weather and selected style
-      let filtered = outfits.filter((pair) => {
+      const isTop = (t) =>
+         /(shirt|t-shirt|blouse|sweater|long-sleeve|top)/i.test(t);
+
+      const isBottom = (t) =>
+         /(trousers|jeans|pants|skirt|cargo)/i.test(t);
+
+      const isJacket = (t) =>
+         /(jacket|hoodie|coat|cardigan)/i.test(t);
+
+      const isDress = (t) =>
+         /(dress|jumpsuit)/i.test(t);
+
+      const filtered = outfits.filter((pair) => {
          const items = pair.filter(Boolean);
-         if (items.length === 0) return false;
 
-         // Match selected style
+         // STYLE FILTER
          if (style !== "all") {
-            const matches = items.some((i) => i.style?.toLowerCase() === style);
-            if (!matches) return false;
+            if (!items.some(i => i.style?.toLowerCase() === style)) return false;
          }
 
-         // Weather rules
-         const isDressOutfit = items.length === 1 && /dress|jumpsuit/i.test(items[0].type);
-         if (isDressOutfit) return true;
+         // DRESS = FULL OUTFIT
+         if (items.length === 1 && isDress(items[0].type)) return true;
 
-         if (!isHot) {
-            const tooLight = items.some((i) =>
-               /(shorts|mini|tank|sleeveless|crop|halter)/i.test(i.type)
-            );
-            if (tooLight) return false;
-         }
+         const tops = items.filter(i => isTop(i.type));
+         const bottoms = items.filter(i => isBottom(i.type));
+         const jackets = items.filter(i => isJacket(i.type));
 
-         if (!isCold) {
-            const tooHeavy = items.some((i) =>
-               /(hoodie|coat|puffer|fleece|thick)/i.test(i.type)
-            );
-            if (tooHeavy) return false;
-         }
+         // MUST HAVE TOP + BOTTOM
+         if (tops.length === 0 || bottoms.length === 0) return false;
 
-         if (isRainy) {
-            const exposed = items.some((i) => /(shorts|mini skirt)/i.test(i.type));
-            if (exposed) return false;
-         }
+         // JACKET ONLY IF TOP + BOTTOM EXIST (already guaranteed here)
+         if (jackets.length > 1) return false;
 
-         if (isMild) {
-            const balanced = items.some((i) =>
-               /(shirt|t-shirt|trousers|jeans|cargo|blouse|long-sleeve|light)/i.test(i.type)
-            );
-            if (!balanced) return false;
+         // WEATHER RULES
+         for (const item of items) {
+            const type = item.type.toLowerCase();
+
+            if (isCold) {
+               if (/(shorts|mini|sleeveless|tank|crop|short sleeve)/i.test(type)) {
+                  return false;
+               }
+            }
+
+            if (isHot) {
+               if (/(hoodie|jacket|coat|sweater|thick)/i.test(type)) {
+                  return false;
+               }
+            }
          }
 
          return true;
       });
 
-      //if none match weather, just match color and style
-      if (filtered.length === 0) {
-         console.warn("No weather-appropriate outfit found. Using fallback...");
-
-         filtered = outfits.filter((pair) => {
-            const items = pair.filter(Boolean);
-            if (items.length < 1) return false;
-
-            // Match style if selected
-            if (style !== "all") {
-               const matches = items.some((i) => i.style?.toLowerCase() === style);
-               if (!matches) return false;
-            }
-
-            //avoid identical or clashing pairs
-            if (items.length === 2) {
-               const c1 = items[0].colour?.toLowerCase() || "";
-               const c2 = items[1].colour?.toLowerCase() || "";
-               const same = c1 === c2;
-               const clash = /red|green|purple/.test(c1) && /red|green|purple/.test(c2);
-               if (same || clash) return false;
-            }
-
-            return true;
-         });
-      }
-
-      //if still nothing, pick any random outfit
       const chosen =
          filtered.length > 0
             ? filtered[Math.floor(Math.random() * filtered.length)]
@@ -202,6 +180,7 @@ function Home() {
 
       setOutfitData(chosen);
    };
+
 
 
    useEffect(() => {
