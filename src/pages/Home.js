@@ -87,6 +87,7 @@ function Home() {
          });
    }, []);
 
+   // Fetch all outfits from backend
    const fetchAllOutfits = (weatherCondition) => {
       fetch(`https://antheamuscat-smart-wardrobe-backend.hf.space/wardrobe?nocache=${Date.now()}`)
          .then((res) => res.json())
@@ -116,7 +117,10 @@ function Home() {
          });
    };
 
-   // Clothing categories & heaviness (unchanged)
+   // ────────────────────────────────────────────────────────────────────────────────
+   //  Clothing Categories & Heaviness
+   // ────────────────────────────────────────────────────────────────────────────────
+
    const TOP_TYPES = [
       "t-shirt", "long-sleeve t-shirt", "sleeveless tank top", "blouse",
       "button-up shirt", "polo shirt", "v-neck shirt", "crew neck t-shirt",
@@ -197,7 +201,7 @@ function Home() {
 
    const pickRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
-   // Pick outfit function (no useCallback needed - simple & safe)
+   // Pick outfit based on current selectedStyle and weather
    const pickWeatherAppropriateOutfit = (items, weatherCondition) => {
       if (!items || items.length === 0) {
          setOutfitData(null);
@@ -209,7 +213,7 @@ function Home() {
       const isHot = temp >= 25;
       const styleLower = selectedStyle.toLowerCase();
 
-      console.log("Picking outfit for style:", selectedStyle); // ← Debug log
+      console.log(`Recomputing outfit for style: ${selectedStyle}`);
 
       const appropriateItems = items.filter((item) =>
          isItemAppropriate(item, isCold, isHot)
@@ -256,16 +260,20 @@ function Home() {
          }
       }
 
-      setOutfitData(finalOutfit.length > 0 ? finalOutfit : null);
+      // Force new array reference every time
+      const newOutfit = finalOutfit.length > 0 ? [...finalOutfit] : null;
+      console.log("New outfit:", newOutfit?.map(i => i?.type) || "none");
+
+      setOutfitData(newOutfit);
    };
 
-   // Re-run outfit selection whenever selectedStyle, allItems, or weatherData changes
+   // Recompute outfit whenever selectedStyle, allItems, or weatherData changes
    useEffect(() => {
       if (allItems.length > 0 && weatherData) {
-         console.log("useEffect triggered - recomputing outfit for style:", selectedStyle);
+         console.log("useEffect triggered - recomputing for style:", selectedStyle);
          pickWeatherAppropriateOutfit(allItems, weatherData.condition);
       }
-   }, [selectedStyle, allItems, weatherData, pickWeatherAppropriateOutfit]);
+   }, [selectedStyle, allItems, weatherData]);
 
    const getWeatherSuggestion = (temp, condition) => {
       if (temp <= 18) return "❄️ Chilly day — layer up with a jacket or coat!";
@@ -377,7 +385,7 @@ function Home() {
                   <div className="row align-items-center justify-content-center">
                      <div className="col-md-6 text-center mb-4 mb-md-0">
                         <div className="d-flex flex-wrap justify-content-center gap-3">
-                           {outfitData.map((item, i) =>
+                           {outfitData.map((item, i) => (
                               item && (
                                  <motion.div key={i} className="text-center" whileHover={{ scale: 1.05 }}>
                                     <img
@@ -397,12 +405,12 @@ function Home() {
                                     {isOuterwear(item.type) && <small className="text-muted">Layer</small>}
                                  </motion.div>
                               )
-                           )}
+                           ))}
                         </div>
                      </div>
 
                      <div className="col-md-6 text-md-start text-center">
-                        {outfitData.map((item, i) =>
+                        {outfitData.map((item, i) => (
                            item && (
                               <div key={i} className="mb-3">
                                  <h5 className="fw-bold" style={{ color: colors.primary }}>
@@ -414,7 +422,7 @@ function Home() {
                                  </p>
                               </div>
                            )
-                        )}
+                        ))}
                      </div>
                   </div>
                </motion.div>
