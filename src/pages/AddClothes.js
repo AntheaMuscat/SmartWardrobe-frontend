@@ -30,16 +30,12 @@ function AddClothes() {
 
    const captureImage = async () => {
       let seconds = 5;
-      const toastId = toast.info(`Taking picture in ${seconds}...`, {
-         autoClose: false,
-      });
+      const toastId = toast.info(`Taking picture in ${seconds}...`, { autoClose: false });
 
       const countdown = setInterval(() => {
          seconds--;
          if (seconds > 0) {
-            toast.update(toastId, {
-               render: `Taking picture in ${seconds}...`,
-            });
+            toast.update(toastId, { render: `Taking picture in ${seconds}...` });
          } else {
             clearInterval(countdown);
          }
@@ -49,22 +45,30 @@ function AddClothes() {
          await new Promise((resolve) => setTimeout(resolve, 5000));
          const res = await fetch(`${PI_URL}/capture`, { method: "POST" });
          const data = await res.json();
+
+         if (!res.ok || data.status === "error") {
+            throw new Error(data.message || "Capture failed");
+         }
+
          setMessage(`Captured: ${data.file}`);
 
+         // Refresh wardrobe after success
+         fetchWardrobe(); // Add your wardrobe refresh function here if you have one
+
          toast.update(toastId, {
-            render: "Image captured — processing complete! Added to wardrobe.",
+            render: `Added: ${data.type} (${(data.confidence * 100).toFixed(0)}% confidence)`,
             type: "success",
             isLoading: false,
-            autoClose: 4000,
+            autoClose: 5000,
          });
       } catch (err) {
          console.error(err);
          clearInterval(countdown);
          toast.update(toastId, {
-            render: "Capture failed. Check connection to Raspberry Pi.",
+            render: err.message || "Failed to add item — try a clearer photo.",
             type: "error",
             isLoading: false,
-            autoClose: 5000,
+            autoClose: 8000,
          });
       }
    };
