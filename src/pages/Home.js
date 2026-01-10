@@ -331,6 +331,11 @@ function Home() {
       const jacket = chosenBase.find((i) => isJacket(i.type)) || null;
 
       setOutfitData({ top, bottom, jacket });
+
+      console.log("Outfits fetched:", outfits);
+      console.log("Weather filtered:", weatherFiltered);
+      console.log("Chosen base:", chosenBase);
+
    };
 
 
