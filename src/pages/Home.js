@@ -486,9 +486,7 @@ function Home() {
                      </div>
                      <div className="col-md-6 text-md-start text-center">
                         {(() => {
-                           const top = outfitData.find((i) => isRealTop(i.type)) || null;
-                           const bottom = outfitData.find((i) => isBottom(i.type)) || null;
-                           const jacket = outfitData.find((i) => isJacket(i.type)) || null;
+                           const { top, bottom, jacket } = outfitData;
                            const slots = [top, bottom, jacket];
 
                            return slots.map((item, i) =>
