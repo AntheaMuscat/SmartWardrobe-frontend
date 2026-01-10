@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { colors } from "../styles/theme";
 import Navbar from "../components/Navbar";
@@ -25,7 +25,7 @@ function Home() {
    useEffect(() => {
       const apiKey = "152ed82b5242e33c5906ac1fd3372c22";
       const cacheKey = "weatherCache";
-      const cacheDuration = 10 * 60 * 1000; // 10 minutes
+      const cacheDuration = 10 * 60 * 1000;
 
       const cached = localStorage.getItem(cacheKey);
       if (cached) {
@@ -87,7 +87,6 @@ function Home() {
          });
    }, []);
 
-   // Fetch all outfits from backend
    const fetchAllOutfits = (weatherCondition) => {
       fetch(`https://antheamuscat-smart-wardrobe-backend.hf.space/wardrobe?nocache=${Date.now()}`)
          .then((res) => res.json())
@@ -117,10 +116,7 @@ function Home() {
          });
    };
 
-   // ────────────────────────────────────────────────────────────────────────────────
-   //  Clothing Categories & Heaviness
-   // ────────────────────────────────────────────────────────────────────────────────
-
+   // Clothing categories & heaviness (unchanged)
    const TOP_TYPES = [
       "t-shirt", "long-sleeve t-shirt", "sleeveless tank top", "blouse",
       "button-up shirt", "polo shirt", "v-neck shirt", "crew neck t-shirt",
@@ -201,10 +197,8 @@ function Home() {
 
    const pickRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
-   // ────────────────────────────────────────────────────────────────────────────────
-   // Pick outfit based on style and weather (fixed for style changes)
-   // ────────────────────────────────────────────────────────────────────────────────
-   const pickWeatherAppropriateOutfit = useCallback((items, weatherCondition) => {
+   // Pick outfit function (no useCallback needed - simple & safe)
+   const pickWeatherAppropriateOutfit = (items, weatherCondition) => {
       if (!items || items.length === 0) {
          setOutfitData(null);
          return;
@@ -213,7 +207,9 @@ function Home() {
       const temp = weatherData?.temperature ?? 20;
       const isCold = temp <= 18;
       const isHot = temp >= 25;
-      const styleLower = selectedStyle.toLowerCase();  // ← Use current selectedStyle
+      const styleLower = selectedStyle.toLowerCase();
+
+      console.log("Picking outfit for style:", selectedStyle); // ← Debug log
 
       const appropriateItems = items.filter((item) =>
          isItemAppropriate(item, isCold, isHot)
@@ -247,7 +243,7 @@ function Home() {
          baseOutfit = [pickRandom(useRealTops), pickRandom(useBottoms)];
       }
 
-      // Optional outerwear (jacket/cardigan)
+      // Optional outerwear
       let finalOutfit = baseOutfit.length > 0 ? [...baseOutfit] : dressOutfit || [];
       const outerwearItems = appropriateItems.filter((i) => isOuterwear(i.type));
       const styledOuterwear = outerwearItems.filter((i) => normalize(i.style) === styleLower);
@@ -261,11 +257,12 @@ function Home() {
       }
 
       setOutfitData(finalOutfit.length > 0 ? finalOutfit : null);
-   }, [weatherData, selectedStyle]);  // ← Depends on selectedStyle!
+   };
 
-   // Recompute outfit when style, items, or weather changes
+   // Re-run outfit selection whenever selectedStyle, allItems, or weatherData changes
    useEffect(() => {
       if (allItems.length > 0 && weatherData) {
+         console.log("useEffect triggered - recomputing outfit for style:", selectedStyle);
          pickWeatherAppropriateOutfit(allItems, weatherData.condition);
       }
    }, [selectedStyle, allItems, weatherData, pickWeatherAppropriateOutfit]);
