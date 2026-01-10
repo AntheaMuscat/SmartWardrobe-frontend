@@ -5,6 +5,7 @@ import AddClothes from "./pages/AddClothes";
 import CalendarPage from "./pages/CalendarPage";
 import Chatbot from "./pages/Chatbot";
 import "./App.css";
+import Analytics from "./pages/Analytics";
 
 function App() {
   return (
