@@ -5,11 +5,13 @@
   "proxy": "http://192.168.0.78:5000",
   "dependencies": {
     "bootstrap": "^5.3.8",
+    "chart.js": "^4.5.1",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.23.24",
     "react": "^18.2.0",
     "react-big-calendar": "^1.19.4",
     "react-calendar": "^6.0.0",
+    "react-chartjs-2": "^5.3.1",
     "react-dom": "^18.2.0",
     "react-modal": "^3.16.3",
     "react-router-dom": "^6.26.1",
