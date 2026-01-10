@@ -256,10 +256,7 @@ function Home() {
       const getItemsByStyle = (targetStyle) =>
          outfits.flat().filter((item) => item?.style?.toLowerCase() === targetStyle);
 
-      // Get all items that match the style if needed
       let styleItems = style === "all" ? [] : getItemsByStyle(style);
-
-      // If only one item exists in this style, force include it
       let forcedItem = styleItems.length === 1 ? styleItems[0] : null;
 
       // Filter outfits that meet weather rules
@@ -278,27 +275,24 @@ function Home() {
          const bottoms = items.filter((i) => isBottom(i.type));
          const jackets = items.filter((i) => isJacket(i.type));
 
-         if (tops.length === 0 || bottoms.length === 0) return false;
+         if (tops.length === 0 && bottoms.length === 0) return false;
          if (jackets.length > 1) return false;
 
          for (const item of items) {
             const type = normalize(item.type);
             const heaviness = getHeaviness(item);
 
-            // Cold
             if (isCold) {
                if (COLD_FORBIDDEN.includes(type)) return false;
                if (isBottom(type) && heaviness === "light") return false;
                if (isRealTop(type) && heaviness === "light") return false;
             }
 
-            // Hot
             if (isHot) {
                if (HOT_FORBIDDEN.includes(type)) return false;
                if (heaviness === "heavy") return false;
             }
 
-            // Mild
             if (!isCold && !isHot) {
                if (heaviness === "heavy" && !isJacket(type)) return false;
             }
@@ -307,7 +301,6 @@ function Home() {
          return true;
       });
 
-      // Pick a base outfit or fallback
       let chosenBase =
          weatherFiltered.length > 0
             ? getRandomItem(weatherFiltered)
@@ -315,11 +308,9 @@ function Home() {
 
       chosenBase = chosenBase.filter(Boolean);
 
-      // If we have a forced single-item style, ensure it's included
       if (forcedItem) {
          const included = chosenBase.some((i) => i === forcedItem);
          if (!included) {
-            // Remove a random top or bottom to make space
             let replaceableIndex = chosenBase.findIndex(
                (i) => isRealTop(i.type) || isBottom(i.type)
             );
@@ -328,17 +319,20 @@ function Home() {
          }
       }
 
-      // Ensure max one jacket
       const jackets = chosenBase.filter((i) => isJacket(i.type));
       if (jackets.length > 1) {
          const jacketToKeep = getRandomItem(jackets);
-         chosenBase = chosenBase.filter(
-            (i) => !isJacket(i.type) || i === jacketToKeep
-         );
+         chosenBase = chosenBase.filter((i) => !isJacket(i.type) || i === jacketToKeep);
       }
 
-      setOutfitData(chosenBase);
+      // ⚡ Normalize the outfit to always have top, bottom, jacket
+      const top = chosenBase.find((i) => isRealTop(i.type)) || null;
+      const bottom = chosenBase.find((i) => isBottom(i.type)) || null;
+      const jacket = chosenBase.find((i) => isJacket(i.type)) || null;
+
+      setOutfitData({ top, bottom, jacket });
    };
+
 
    useEffect(() => {
       if (allOutfits.length > 0 && weatherData) {
@@ -458,11 +452,9 @@ function Home() {
                   <div className="row align-items-center justify-content-center">
                      <div className="col-md-6 text-center mb-4 mb-md-0">
                         {(() => {
-                           // Ensure 3 slots: top, bottom, jacket
-                           const top = outfitData.find((i) => isRealTop(i.type)) || null;
-                           const bottom = outfitData.find((i) => isBottom(i.type)) || null;
-                           const jacket = outfitData.find((i) => isJacket(i.type)) || null;
+                           const { top, bottom, jacket } = outfitData;
                            const slots = [top, bottom, jacket];
+
 
                            return slots.map((item, i) =>
                               item ? (
