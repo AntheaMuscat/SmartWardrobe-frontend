@@ -174,6 +174,17 @@ function Home() {
       "leather jacket": "medium",
    };
 
+   const normalize = (t) => t?.toLowerCase().trim();
+
+   const isTop = (t) => TOP_TYPES.includes(normalize(t));
+   const isBottom = (t) => BOTTOM_TYPES.includes(normalize(t));
+   const isDress = (t) => DRESS_TYPES.includes(normalize(t));
+
+   // Jackets are tops but treated as optional layers
+   const isJacket = (t) =>
+      ["denim jacket", "leather jacket", "cardigan"].includes(normalize(t));
+
+
    const isRealTop = (t) =>
       isTop(t) && !isJacket(t);
 
@@ -200,9 +211,6 @@ function Home() {
       "overalls": "heavy",
    };
 
-
-
-
    const pickWeatherAppropriateOutfit = (outfits, weatherCondition, style) => {
       if (!outfits || outfits.length === 0) {
          setOutfitData(null);
@@ -213,16 +221,6 @@ function Home() {
       const isCold = temp <= 18;
       const isHot = temp >= 25;
 
-      const normalize = (t) => t?.toLowerCase().trim();
-
-      const isTop = (t) => TOP_TYPES.includes(normalize(t));
-      const isBottom = (t) => BOTTOM_TYPES.includes(normalize(t));
-      const isDress = (t) => DRESS_TYPES.includes(normalize(t));
-
-      // Jackets are tops but treated as optional layers
-      const isJacket = (t) =>
-         ["denim jacket", "leather jacket", "cardigan"].includes(normalize(t));
-
       const getHeaviness = (item) => {
          const type = normalize(item.type);
          return (
@@ -232,7 +230,6 @@ function Home() {
             "medium"
          );
       };
-
 
       const filtered = outfits.filter((pair) => {
          const items = pair.filter(Boolean);
