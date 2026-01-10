@@ -215,57 +215,74 @@ function Home() {
 
       console.log(`Recomputing outfit for style: ${selectedStyle}`);
 
-      const appropriateItems = items.filter((item) =>
-         isItemAppropriate(item, isCold, isHot)
-      );
+      // Filter items by weather appropriateness
+      const appropriateItems = items.filter((item) => isItemAppropriate(item, isCold, isHot));
 
       if (appropriateItems.length === 0) {
          setOutfitData(null);
          return;
       }
 
+      // --------------------------
       // Dresses
+      // --------------------------
       let dressOutfit = null;
       const dresses = appropriateItems.filter((i) => isDress(i.type));
-      const styledDresses = dresses.filter((i) => normalize(i.style) === styleLower);
-      const useDresses = styleLower !== "all" && styledDresses.length > 0 ? styledDresses : dresses;
-      if (useDresses.length > 0) {
-         dressOutfit = [pickRandom(useDresses)];
+      if (styleLower === "all") {
+         if (dresses.length > 0) dressOutfit = [pickRandom(dresses)];
+      } else {
+         const styledDresses = dresses.filter((i) => normalize(i.style) === styleLower);
+         if (styledDresses.length > 0) dressOutfit = [pickRandom(styledDresses)];
       }
 
-      // Base: Real top + Bottom
+      // --------------------------
+      // Tops + Bottoms
+      // --------------------------
       let baseOutfit = [];
       const realTops = appropriateItems.filter((i) => isRealTop(i.type));
-      const styledRealTops = realTops.filter((i) => normalize(i.style) === styleLower);
-      const useRealTops = styleLower !== "all" && styledRealTops.length > 0 ? styledRealTops : realTops;
-
       const bottoms = appropriateItems.filter((i) => isBottom(i.type));
-      const styledBottoms = bottoms.filter((i) => normalize(i.style) === styleLower);
-      const useBottoms = styleLower !== "all" && styledBottoms.length > 0 ? styledBottoms : bottoms;
 
-      if (useRealTops.length > 0 && useBottoms.length > 0) {
-         baseOutfit = [pickRandom(useRealTops), pickRandom(useBottoms)];
-      }
-
-      // Optional outerwear
-      let finalOutfit = baseOutfit.length > 0 ? [...baseOutfit] : dressOutfit || [];
-      const outerwearItems = appropriateItems.filter((i) => isOuterwear(i.type));
-      const styledOuterwear = outerwearItems.filter((i) => normalize(i.style) === styleLower);
-      const useOuterwear = styleLower !== "all" && styledOuterwear.length > 0 ? styledOuterwear : outerwearItems;
-
-      if (useOuterwear.length > 0 && finalOutfit.length > 0) {
-         const shouldAdd = isCold || (!isHot && Math.random() > 0.5);
-         if (shouldAdd) {
-            finalOutfit.push(pickRandom(useOuterwear));
+      if (styleLower === "all") {
+         if (realTops.length > 0 && bottoms.length > 0) {
+            baseOutfit = [pickRandom(realTops), pickRandom(bottoms)];
+         }
+      } else {
+         const styledTops = realTops.filter((i) => normalize(i.style) === styleLower);
+         const styledBottoms = bottoms.filter((i) => normalize(i.style) === styleLower);
+         if (styledTops.length > 0 && styledBottoms.length > 0) {
+            baseOutfit = [pickRandom(styledTops), pickRandom(styledBottoms)];
          }
       }
 
-      // Force new array reference every time
+      // --------------------------
+      // Outerwear (optional)
+      // --------------------------
+      const outerwearItems = appropriateItems.filter((i) => isOuterwear(i.type));
+      let useOuterwear = [];
+      if (styleLower === "all") useOuterwear = outerwearItems;
+      else useOuterwear = outerwearItems.filter((i) => normalize(i.style) === styleLower);
+
+      // Decide whether to add outerwear
+      let finalOutfit = baseOutfit.length > 0 ? [...baseOutfit] : dressOutfit || [];
+      if (useOuterwear.length > 0 && finalOutfit.length > 0) {
+         const shouldAdd = isCold || (!isHot && Math.random() > 0.5);
+         if (shouldAdd) finalOutfit.push(pickRandom(useOuterwear));
+      }
+
+      // --------------------------
+      // Set final outfit or null
+      // --------------------------
       const newOutfit = finalOutfit.length > 0 ? [...finalOutfit] : null;
-      console.log("New outfit:", newOutfit?.map(i => i?.type) || "none");
+      console.log(
+         "New outfit:",
+         newOutfit?.map((i) => i?.type) || "none",
+         "for style:",
+         selectedStyle
+      );
 
       setOutfitData(newOutfit);
    };
+
 
    // Recompute outfit whenever selectedStyle, allItems, or weatherData changes
    useEffect(() => {
