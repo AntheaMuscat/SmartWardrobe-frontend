@@ -250,93 +250,72 @@ function Home() {
          );
       };
 
-      const getRandomItem = (list) =>
-         list[Math.floor(Math.random() * list.length)];
-
-      const getItemsByStyle = (targetStyle) =>
-         outfits.flat().filter((item) => item?.style?.toLowerCase() === targetStyle);
-
-      let styleItems = style === "all" ? [] : getItemsByStyle(style);
-      let forcedItem = styleItems.length === 1 ? styleItems[0] : null;
-
-      // Filter outfits that meet weather rules
-      const weatherFiltered = outfits.filter((pair) => {
+      const filtered = outfits.filter((pair) => {
          const items = pair.filter(Boolean);
 
-         // Dress-only outfits
+         /* ---------- STYLE FILTER ---------- */
+         if (style !== "all") {
+            if (!items.every(i => i.style?.toLowerCase() === style)) return false;
+         }
+
+
+         /* ---------- DRESS = FULL OUTFIT ---------- */
          if (items.length === 1 && isDress(items[0].type)) {
             const heaviness = getHeaviness(items[0]);
-            if ((isCold && heaviness === "light") || (isHot && heaviness === "heavy"))
-               return false;
+            if (isCold && heaviness === "light") return false;
+            if (isHot && heaviness === "heavy") return false;
             return true;
          }
 
-         const tops = items.filter((i) => isRealTop(i.type));
-         const bottoms = items.filter((i) => isBottom(i.type));
-         const jackets = items.filter((i) => isJacket(i.type));
+         const realTops = items.filter(i => isRealTop(i.type));
+         const bottoms = items.filter(i => isBottom(i.type));
+         const jackets = items.filter(i => isJacket(i.type));
 
-         if (tops.length === 0 && bottoms.length === 0) return false;
+         /* ---------- MUST HAVE TOP + BOTTOM ---------- */
+         if (realTops.length === 0 || bottoms.length === 0) return false;
+
+         /* ---------- MAX ONE JACKET ---------- */
          if (jackets.length > 1) return false;
 
          for (const item of items) {
             const type = normalize(item.type);
             const heaviness = getHeaviness(item);
 
+            /* ---------- COLD WEATHER ---------- */
             if (isCold) {
+               // Absolutely forbidden items
                if (COLD_FORBIDDEN.includes(type)) return false;
+
+               // Bottoms must not be light
                if (isBottom(type) && heaviness === "light") return false;
+
+               // Tops must be medium or heavy
                if (isRealTop(type) && heaviness === "light") return false;
             }
 
+            /* ---------- HOT WEATHER ---------- */
             if (isHot) {
                if (HOT_FORBIDDEN.includes(type)) return false;
                if (heaviness === "heavy") return false;
             }
 
+            /* ---------- MILD WEATHER ---------- */
             if (!isCold && !isHot) {
                if (heaviness === "heavy" && !isJacket(type)) return false;
             }
          }
-
          return true;
       });
 
-      let chosenBase =
-         weatherFiltered.length > 0
-            ? getRandomItem(weatherFiltered)
-            : getRandomItem(outfits);
+      const chosen =
+         filtered.length > 0
+            ? filtered[Math.floor(Math.random() * filtered.length)]
+            : outfits[Math.floor(Math.random() * outfits.length)];
 
-      chosenBase = chosenBase.filter(Boolean);
-
-      if (forcedItem) {
-         const included = chosenBase.some((i) => i === forcedItem);
-         if (!included) {
-            let replaceableIndex = chosenBase.findIndex(
-               (i) => isRealTop(i.type) || isBottom(i.type)
-            );
-            if (replaceableIndex === -1) replaceableIndex = 0;
-            chosenBase[replaceableIndex] = forcedItem;
-         }
-      }
-
-      const jackets = chosenBase.filter((i) => isJacket(i.type));
-      if (jackets.length > 1) {
-         const jacketToKeep = getRandomItem(jackets);
-         chosenBase = chosenBase.filter((i) => !isJacket(i.type) || i === jacketToKeep);
-      }
-
-      // ⚡ Normalize the outfit to always have top, bottom, jacket
-      const top = chosenBase.find((i) => isRealTop(i.type)) || null;
-      const bottom = chosenBase.find((i) => isBottom(i.type)) || null;
-      const jacket = chosenBase.find((i) => isJacket(i.type)) || null;
-
-      setOutfitData({ top, bottom, jacket });
-
-      console.log("Outfits fetched:", outfits);
-      console.log("Weather filtered:", weatherFiltered);
-      console.log("Chosen base:", chosenBase);
-
+      setOutfitData(chosen);
    };
+
+
 
 
    useEffect(() => {
@@ -456,18 +435,14 @@ function Home() {
                   </h2>
                   <div className="row align-items-center justify-content-center">
                      <div className="col-md-6 text-center mb-4 mb-md-0">
-                        {(() => {
-                           const { top, bottom, jacket } = outfitData;
-                           const slots = [top, bottom, jacket];
-
-
-                           return slots.map((item, i) =>
-                              item ? (
+                        {outfitData.map(
+                           (item, i) =>
+                              item && (
                                  <motion.img
                                     key={i}
                                     src={item.image_path}
                                     alt={item.type}
-                                    className="img-fluid mb-3"
+                                    className="img-fluid"
                                     style={{
                                        maxWidth: "260px",
                                        borderRadius: "20px",
@@ -475,27 +450,13 @@ function Home() {
                                     }}
                                     whileHover={{ scale: 1.05 }}
                                  />
-                              ) : (
-                                 <div
-                                    key={i}
-                                    style={{
-                                       display: "inline-block",
-                                       width: "260px",
-                                       height: "350px",
-                                       marginBottom: "1rem",
-                                    }}
-                                 />
                               )
-                           );
-                        })()}
+                        )}
                      </div>
                      <div className="col-md-6 text-md-start text-center">
-                        {(() => {
-                           const { top, bottom, jacket } = outfitData;
-                           const slots = [top, bottom, jacket];
-
-                           return slots.map((item, i) =>
-                              item ? (
+                        {outfitData.map(
+                           (item, i) =>
+                              item && (
                                  <div key={i}>
                                     <h5 className="fw-bold" style={{ color: colors.primary }}>
                                        {item.type}
@@ -504,9 +465,8 @@ function Home() {
                                        Style: <strong>{item.style}</strong> | Colour: {item.colour}
                                     </p>
                                  </div>
-                              ) : null
-                           );
-                        })()}
+                              )
+                        )}
                      </div>
                   </div>
                </motion.div>
@@ -524,7 +484,6 @@ function Home() {
                   </p>
                </motion.div>
             )}
-
          </div>
       </>
    );
