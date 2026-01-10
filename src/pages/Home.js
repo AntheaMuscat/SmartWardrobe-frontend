@@ -21,7 +21,7 @@ function Home() {
       else setGreeting("Good Evening");
    }, []);
 
-   // Fetch weather and outfits (unchanged)
+   // Fetch weather and outfits
    useEffect(() => {
       const apiKey = "152ed82b5242e33c5906ac1fd3372c22";
       const cacheKey = "weatherCache";
@@ -119,36 +119,58 @@ function Home() {
          });
    };
 
-   // ────────────────────────────────────────────────────────────────────────────────
-   //  Clothing Categories & Heaviness (Updated: Jackets → Outerwear)
-   // ────────────────────────────────────────────────────────────────────────────────
-
    const TOP_TYPES = [
-      "t-shirt", "long-sleeve t-shirt", "sleeveless tank top", "blouse",
-      "button-up shirt", "polo shirt", "v-neck shirt", "crew neck t-shirt",
-      "turtleneck", "off-shoulder top", "cropped top", "fitted shirt",
-      "loose hoodie" // hoodie/sweater can be base or layer, but not jacket
-   ];
-
-   const OUTERWEAR_TYPES = [
-      "denim jacket", "leather jacket", "cardigan"
+      "t-shirt",
+      "long-sleeve t-shirt",
+      "sleeveless tank top",
+      "hoodie",
+      "blouse",
+      "button-up shirt",
+      "denim jacket",
+      "leather jacket",
+      "sweater",
+      "cardigan",
+      "polo shirt",
+      "v-neck shirt",
+      "crew neck t-shirt",
+      "turtleneck",
+      "off-shoulder top",
+      "cropped top",
+      "fitted shirt",
+      "loose hoodie"
    ];
 
    const BOTTOM_TYPES = [
-      "trousers", "jeans", "shorts", "cargo pants", "sweatpants",
-      "mini skirt", "midi skirt", "maxi skirt", "pencil skirt", "pleated skirt"
+      "trousers",
+      "jeans",
+      "shorts",
+      "cargo pants",
+      "sweatpants",
+      "mini skirt",
+      "midi skirt",
+      "maxi skirt",
+      "pencil skirt",
+      "pleated skirt"
    ];
 
    const DRESS_TYPES = [
-      "dress", "summer dress", "cocktail dress", "maxi dress", "jumpsuit", "overalls"
+      "dress",
+      "summer dress",
+      "cocktail dress",
+      "maxi dress",
+      "jumpsuit",
+      "overalls"
    ];
 
    const TOP_HEAVINESS = {
       "t-shirt": "light",
       "long-sleeve t-shirt": "medium",
       "sleeveless tank top": "light",
+      "hoodie": "heavy",
       "blouse": "light",
       "button-up shirt": "medium",
+      "sweater": "heavy",
+      "cardigan": "medium",
       "polo shirt": "light",
       "v-neck shirt": "light",
       "crew neck t-shirt": "light",
@@ -157,13 +179,24 @@ function Home() {
       "cropped top": "light",
       "fitted shirt": "medium",
       "loose hoodie": "heavy",
-   };
-
-   const OUTERWEAR_HEAVINESS = {
       "denim jacket": "medium",
       "leather jacket": "medium",
-      "cardigan": "medium",
    };
+
+   const normalize = (t) => t?.toLowerCase().trim();
+
+   const isTop = (t) => TOP_TYPES.includes(normalize(t));
+   const isBottom = (t) => BOTTOM_TYPES.includes(normalize(t));
+   const isDress = (t) => DRESS_TYPES.includes(normalize(t));
+
+   // Jackets are tops but treated as optional layers
+   const isJacket = (t) =>
+      ["denim jacket", "leather jacket", "cardigan"].includes(normalize(t));
+
+
+   const isRealTop = (t) =>
+      isTop(t) && !isJacket(t);
+
 
    const BOTTOM_HEAVINESS = {
       "shorts": "light",
@@ -188,28 +221,28 @@ function Home() {
    };
 
    const COLD_FORBIDDEN = [
-      "cropped top", "sleeveless tank top", "off-shoulder top",
-      "shorts", "mini skirt"
+      "cropped top",
+      "sleeveless tank top",
+      "off-shoulder top",
+      "shorts",
+      "mini skirt"
    ];
 
    const HOT_FORBIDDEN = [
-      "hoodie", "sweater", "turtleneck", "loose hoodie"
+      "hoodie",
+      "sweater",
+      "turtleneck",
+      "jacket",
+      "denim jacket",
+      "leather jacket",
+      "cardigan"
    ];
 
-   const normalize = (t) => t?.toLowerCase().trim();
-
-   const isTop = (t) => TOP_TYPES.includes(normalize(t));
-   const isOuterwear = (t) => OUTERWEAR_TYPES.includes(normalize(t));
-   const isBottom = (t) => BOTTOM_TYPES.includes(normalize(t));
-   const isDress = (t) => DRESS_TYPES.includes(normalize(t));
-
-   const isRealTop = (t) => isTop(t) && !isOuterwear(t);
 
    const getHeaviness = (item) => {
       const type = normalize(item.type);
       return (
          TOP_HEAVINESS[type] ||
-         OUTERWEAR_HEAVINESS[type] ||
          BOTTOM_HEAVINESS[type] ||
          DRESS_HEAVINESS[type] ||
          "medium"
@@ -224,16 +257,15 @@ function Home() {
          if (COLD_FORBIDDEN.includes(type)) return false;
          if (isBottom(type) && heaviness === "light") return false;
          if (isRealTop(type) && heaviness === "light") return false;
-         // Outerwear can be heavier in cold
       }
 
       if (isHot) {
          if (HOT_FORBIDDEN.includes(type)) return false;
-         if (heaviness === "heavy" && !isOuterwear(type)) return false;
+         if (heaviness === "heavy") return false;
       }
 
       if (!isCold && !isHot) {
-         if (heaviness === "heavy" && !isOuterwear(type)) return false;
+         if (heaviness === "heavy" && !isJacket(type)) return false;
       }
 
       return true;
@@ -261,7 +293,7 @@ function Home() {
          return;
       }
 
-      // 1. Dresses (full outfit)
+      // Dresses
       let dressOutfit = null;
       const dresses = appropriateItems.filter((i) => isDress(i.type));
       const styledDresses = dresses.filter((i) => normalize(i.style) === styleLower);
@@ -270,41 +302,65 @@ function Home() {
          dressOutfit = [pickRandom(useDresses)];
       }
 
-      // 2. Base: Real top + Bottom
-      let baseOutfit = [];
-      const realTops = appropriateItems.filter((i) => isRealTop(i.type));
-      const styledRealTops = realTops.filter((i) => normalize(i.style) === styleLower);
-      const useRealTops = style !== "all" && styledRealTops.length > 0 ? styledRealTops : realTops;
+      // Top + Bottom + Optional Jacket
+      let tbOutfit = [];
+      const tops = appropriateItems.filter((i) => isRealTop(i.type));
+      const styledTops = tops.filter((i) => normalize(i.style) === styleLower);
+      const useTops = style !== "all" && styledTops.length > 0 ? styledTops : tops;
 
-      const bottoms = appropriateItems.filter((i) => isBottom(i.type));
-      const styledBottoms = bottoms.filter((i) => normalize(i.style) === styleLower);
-      const useBottoms = style !== "all" && styledBottoms.length > 0 ? styledBottoms : bottoms;
+      const bottomsA = appropriateItems.filter((i) => isBottom(i.type));
+      const styledBottoms = bottomsA.filter((i) => normalize(i.style) === styleLower);
+      const useBottoms = style !== "all" && styledBottoms.length > 0 ? styledBottoms : bottomsA;
 
-      if (useRealTops.length > 0 && useBottoms.length > 0) {
-         const top = pickRandom(useRealTops);
+      const jacketsA = appropriateItems.filter((i) => isJacket(i.type));
+      const styledJackets = jacketsA.filter((i) => normalize(i.style) === styleLower);
+      const useJackets = style !== "all" && styledJackets.length > 0 ? styledJackets : jacketsA;
+
+      if (useTops.length > 0 && useBottoms.length > 0) {
+         const top = pickRandom(useTops);
          const bottom = pickRandom(useBottoms);
-         baseOutfit = [top, bottom];
-      }
+         tbOutfit = [top, bottom];
 
-      // 3. Optional Outerwear (jacket/cardigan)
-      let finalOutfit = baseOutfit.length > 0 ? [...baseOutfit] : dressOutfit || [];
-
-      const outerwearItems = appropriateItems.filter((i) => isOuterwear(i.type));
-      const styledOuterwear = outerwearItems.filter((i) => normalize(i.style) === styleLower);
-      const useOuterwear = style !== "all" && styledOuterwear.length > 0 ? styledOuterwear : outerwearItems;
-
-      if (useOuterwear.length > 0 && finalOutfit.length > 0) {
-         // Add jacket in cold or 50% chance in mild
-         const shouldAdd = isCold || (!isHot && Math.random() > 0.5);
-         if (shouldAdd) {
-            const jacket = pickRandom(useOuterwear);
-            finalOutfit.push(jacket);
+         if (useJackets.length > 0) {
+            let addJacket = isCold || (!isHot && Math.random() > 0.5);
+            if (addJacket) {
+               const jacket = pickRandom(useJackets);
+               tbOutfit.push(jacket);
+            }
          }
       }
 
-      // Final decision
-      const chosen = finalOutfit.length > 0 ? finalOutfit : null;
-      setOutfitData(chosen);
+      const hasStyled = (arr) =>
+         arr.some((i) => normalize(i.style) === styleLower);
+
+      if (style === "all") {
+         if (dressOutfit && tbOutfit.length > 0) {
+            setOutfitData(Math.random() > 0.5 ? dressOutfit : tbOutfit);
+         } else if (dressOutfit) {
+            setOutfitData(dressOutfit);
+         } else if (tbOutfit.length > 0) {
+            setOutfitData(tbOutfit);
+         } else {
+            setOutfitData(null);
+         }
+      } else {
+         const dressHas = dressOutfit && hasStyled(dressOutfit);
+         const tbHas = tbOutfit.length > 0 && hasStyled(tbOutfit);
+
+         if (dressHas && tbHas) {
+            setOutfitData(Math.random() > 0.5 ? dressOutfit : tbOutfit);
+         } else if (dressHas) {
+            setOutfitData(dressOutfit);
+         } else if (tbHas) {
+            setOutfitData(tbOutfit);
+         } else if (tbOutfit.length > 0) {
+            setOutfitData(tbOutfit);
+         } else if (dressOutfit) {
+            setOutfitData(dressOutfit);
+         } else {
+            setOutfitData(null);
+         }
+      }
    };
 
    useEffect(() => {
@@ -313,11 +369,13 @@ function Home() {
       }
    }, [selectedStyle, allItems, weatherData]);
 
+   //Weather suggestion
    const getWeatherSuggestion = (temp, condition) => {
-      if (temp <= 18) return "❄️ Chilly day — layer up with a jacket or coat!";
-      if (temp >= 25) return "☀️ Sunny & hot — keep it light and breathable!";
-      if (condition === "rainy") return "🌧 Rainy — bring an umbrella and consider a light jacket.";
-      return "🌤 Mild & comfortable — shirt + trousers is perfect.";
+      if (temp <= 18) return "❄️ A chilly day — grab a warm sweater or coat!";
+      if (temp >= 25) return "☀️ Perfect sunny weather — light and breathable clothes!";
+      if (condition === "rainy")
+         return "🌧 Rain expected — a light jacket or umbrella is your best friend.";
+      return "🌤 Comfortable and calm — a shirt or tee with trousers works great.";
    };
 
    return (
@@ -422,38 +480,24 @@ function Home() {
                   </h2>
                   <div className="row align-items-center justify-content-center">
                      <div className="col-md-6 text-center mb-4 mb-md-0">
-                        <div className="d-flex flex-wrap justify-content-center gap-3">
-                           {outfitData.map(
-                              (item, i) =>
-                                 item && (
-                                    <motion.div
-                                       key={i}
-                                       className="text-center"
-                                       whileHover={{ scale: 1.05 }}
-                                    >
-                                       <img
-                                          src={item.image_path}
-                                          alt={item.type}
-                                          className="img-fluid rounded-4 mb-2"
-                                          style={{
-                                             maxWidth: "220px",
-                                             maxHeight: "280px",
-                                             objectFit: "contain",
-                                             backgroundColor: "#f8f9fa",
-                                          }}
-                                       />
-                                       <p className="mb-1 fw-bold" style={{ fontSize: "1rem" }}>
-                                          {item.type}
-                                       </p>
-                                       {isOuterwear(item.type) && (
-                                          <small className="text-muted">Layer</small>
-                                       )}
-                                    </motion.div>
-                                 )
-                           )}
-                        </div>
+                        {outfitData.map(
+                           (item, i) =>
+                              item && (
+                                 <motion.img
+                                    key={i}
+                                    src={item.image_path}
+                                    alt={item.type}
+                                    className="img-fluid mb-3"
+                                    style={{
+                                       maxWidth: "260px",
+                                       borderRadius: "20px",
+                                       objectFit: "cover",
+                                    }}
+                                    whileHover={{ scale: 1.05 }}
+                                 />
+                              )
+                        )}
                      </div>
-
                      <div className="col-md-6 text-md-start text-center">
                         {outfitData.map(
                            (item, i) =>
@@ -461,9 +505,6 @@ function Home() {
                                  <div key={i} className="mb-3">
                                     <h5 className="fw-bold" style={{ color: colors.primary }}>
                                        {item.type}
-                                       {isOuterwear(item.type) && (
-                                          <small className="text-muted ms-2">(Layer)</small>
-                                       )}
                                     </h5>
                                     <p style={{ color: colors.textMuted }}>
                                        Style: <strong>{item.style}</strong> | Colour: {item.colour}

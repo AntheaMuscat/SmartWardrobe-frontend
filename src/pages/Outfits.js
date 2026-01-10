@@ -70,7 +70,7 @@ function Outfits() {
                   🔁 Refresh Outfits
                </button>
 
-               {Object.entries(outfitSuggestions).map(([style, data], i) => (
+               {Object.entries(outfitSuggestions).map(([style, outfits], i) => (
                   <motion.div
                      key={style}
                      className="mb-5"
@@ -89,195 +89,87 @@ function Outfits() {
                         {capitalizeWords(style)} Wear
                      </h2>
 
-                     {/* Core Outfits (Top + Bottom or Dress) */}
-                     {data.core_outfits?.length > 0 && (
-                        <div className="mb-4">
-                           <h4 style={{ color: colors.primary, marginBottom: "1rem" }}>
-                              Core Outfits
-                           </h4>
-                           <div
-                              className="d-grid"
+                     <div
+                        className="d-grid"
+                        style={{
+                           gridTemplateColumns:
+                              "repeat(auto-fill, minmax(320px, 1fr))",
+                           gap: "35px",
+                        }}
+                     >
+                        {outfits.map((pair, index) => (
+                           <motion.div
+                              key={index}
+                              className="p-4 rounded-4"
                               style={{
-                                 gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
-                                 gap: "35px",
+                                 backgroundColor: "white",
+                                 boxShadow: "0 8px 20px rgba(0,0,0,0.1)",
+                                 border: "1px solid rgba(0,0,0,0.1)",
+                                 transition: "all 0.3s ease",
+                                 cursor: "default",
                               }}
+                              whileHover={{ scale: 1.04 }}
                            >
-                              {data.core_outfits.map((pair, index) => (
-                                 <motion.div
-                                    key={index}
-                                    className="p-4 rounded-4"
+                              <div
+                                 className="d-flex justify-content-center align-items-center"
+                                 style={{
+                                    minHeight: "250px",
+                                    gap: "10px",
+                                 }}
+                              >
+                                 {pair.map(
+                                    (item, j) =>
+                                       item && (
+                                          <img
+                                             key={j}
+                                             src={item.image_path} 
+                                             alt={item.type}
+                                             className="img-fluid rounded-4"
+                                             style={{
+                                                width: pair[1] ? "48%" : "85%",
+                                                height: "220px",
+                                                objectFit: "contain",
+                                                backgroundColor: "#f8f9fa",
+                                                borderRadius: "12px",
+                                                padding: "10px",
+                                                transition: "transform 0.3s ease",
+                                             }}
+                                          />
+                                       )
+                                 )}
+                              </div>
+
+                              <div
+                                 style={{
+                                    textAlign: "center",
+                                    marginTop: "18px",
+                                 }}
+                              >
+                                 <h5
+                                    className="fw-bold mb-2"
                                     style={{
-                                       backgroundColor: "white",
-                                       boxShadow: "0 8px 20px rgba(0,0,0,0.1)",
-                                       border: "1px solid rgba(0,0,0,0.1)",
-                                       transition: "all 0.3s ease",
-                                       cursor: "default",
+                                       color: colors.primary,
+                                       fontSize: "1.1rem",
                                     }}
-                                    whileHover={{ scale: 1.04 }}
                                  >
-                                    <div
-                                       className="d-flex justify-content-center align-items-center"
-                                       style={{
-                                          minHeight: "250px",
-                                          gap: "10px",
-                                       }}
-                                    >
-                                       {pair.map(
-                                          (item, j) =>
-                                             item && (
-                                                <img
-                                                   key={j}
-                                                   src={item.image_path}
-                                                   alt={item.type}
-                                                   className="img-fluid rounded-4"
-                                                   style={{
-                                                      width: pair[1] ? "48%" : "85%",
-                                                      height: "220px",
-                                                      objectFit: "contain",
-                                                      backgroundColor: "#f8f9fa",
-                                                      borderRadius: "12px",
-                                                      padding: "10px",
-                                                      transition: "transform 0.3s ease",
-                                                   }}
-                                                />
-                                             )
-                                       )}
-                                    </div>
-
-                                    <div
-                                       style={{
-                                          textAlign: "center",
-                                          marginTop: "18px",
-                                       }}
-                                    >
-                                       <h5
-                                          className="fw-bold mb-2"
-                                          style={{
-                                             color: colors.primary,
-                                             fontSize: "1.1rem",
-                                          }}
-                                       >
-                                          {pair
-                                             .filter(Boolean)
-                                             .map((i) => capitalizeWords(i.type))
-                                             .join(" & ")}
-                                       </h5>
-                                       <p
-                                          className="text-muted mb-0"
-                                          style={{ fontSize: "0.95rem" }}
-                                       >
-                                          {pair
-                                             .filter(Boolean)
-                                             .map((i) => capitalizeWords(i.colour))
-                                             .join(" / ")}
-                                       </p>
-                                    </div>
-                                 </motion.div>
-                              ))}
-                           </div>
-                        </div>
-                     )}
-
-                     {/* Suggested Shoes */}
-                     {data.suggested_shoes?.length > 0 && (
-                        <div className="mb-4">
-                           <h4 style={{ color: colors.primary, marginBottom: "1rem" }}>
-                              Suggested Shoes 👟
-                           </h4>
-                           <div
-                              className="d-grid"
-                              style={{
-                                 gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
-                                 gap: "20px",
-                              }}
-                           >
-                              {data.suggested_shoes.map((shoe, index) => (
-                                 <motion.div
-                                    key={index}
-                                    className="p-3 rounded-4 text-center"
-                                    style={{
-                                       backgroundColor: "white",
-                                       boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                                       transition: "all 0.3s ease",
-                                    }}
-                                    whileHover={{ scale: 1.05 }}
+                                    {pair
+                                       .filter(Boolean)
+                                       .map((i) => capitalizeWords(i.type))
+                                       .join(" & ")}
+                                 </h5>
+                                 <p
+                                    className="text-muted mb-0"
+                                    style={{ fontSize: "0.95rem" }}
                                  >
-                                    <img
-                                       src={shoe.image_path}
-                                       alt={shoe.type}
-                                       className="img-fluid rounded-3 mb-2"
-                                       style={{
-                                          height: "180px",
-                                          objectFit: "contain",
-                                          backgroundColor: "#f8f9fa",
-                                       }}
-                                    />
-                                    <p className="mb-1 fw-bold" style={{ fontSize: "1rem" }}>
-                                       {capitalizeWords(shoe.type)}
-                                    </p>
-                                    <p className="text-muted mb-0" style={{ fontSize: "0.85rem" }}>
-                                       {capitalizeWords(shoe.colour)}
-                                    </p>
-                                 </motion.div>
-                              ))}
-                           </div>
-                        </div>
-                     )}
-
-                     {/* Suggested Accessories */}
-                     {data.suggested_accessories?.length > 0 && (
-                        <div>
-                           <h4 style={{ color: colors.primary, marginBottom: "1rem" }}>
-                              Suggested Accessories 👜
-                           </h4>
-                           <div
-                              className="d-grid"
-                              style={{
-                                 gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
-                                 gap: "15px",
-                              }}
-                           >
-                              {data.suggested_accessories.map((acc, index) => (
-                                 <motion.div
-                                    key={index}
-                                    className="p-3 rounded-4 text-center"
-                                    style={{
-                                       backgroundColor: "white",
-                                       boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                                       transition: "all 0.3s ease",
-                                    }}
-                                    whileHover={{ scale: 1.05 }}
-                                 >
-                                    <img
-                                       src={acc.image_path}
-                                       alt={acc.type}
-                                       className="img-fluid rounded-3 mb-2"
-                                       style={{
-                                          height: "140px",
-                                          objectFit: "contain",
-                                          backgroundColor: "#f8f9fa",
-                                       }}
-                                    />
-                                    <p className="mb-1 fw-bold" style={{ fontSize: "0.9rem" }}>
-                                       {capitalizeWords(acc.type)}
-                                    </p>
-                                    <p className="text-muted mb-0" style={{ fontSize: "0.8rem" }}>
-                                       {capitalizeWords(acc.colour)}
-                                    </p>
-                                 </motion.div>
-                              ))}
-                           </div>
-                        </div>
-                     )}
-
-                     {/* Fallback message if no suggestions */}
-                     {!data.core_outfits?.length &&
-                        !data.suggested_shoes?.length &&
-                        !data.suggested_accessories?.length && (
-                           <p className="text-muted text-center">
-                              No suggestions for this style yet — add more items!
-                           </p>
-                        )}
+                                    {pair
+                                       .filter(Boolean)
+                                       .map((i) => capitalizeWords(i.colour))
+                                       .join(" / ")}
+                                 </p>
+                              </div>
+                           </motion.div>
+                        ))}
+                     </div>
                   </motion.div>
                ))}
             </div>
