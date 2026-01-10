@@ -174,6 +174,10 @@ function Home() {
       "leather jacket": "medium",
    };
 
+   const isRealTop = (t) =>
+      isTop(t) && !isJacket(t);
+
+
    const BOTTOM_HEAVINESS = {
       "shorts": "light",
       "mini skirt": "light",
@@ -246,12 +250,12 @@ function Home() {
             return true;
          }
 
-         const tops = items.filter(i => isTop(i.type));
+         const realTops = items.filter(i => isRealTop(i.type));
          const bottoms = items.filter(i => isBottom(i.type));
          const jackets = items.filter(i => isJacket(i.type));
 
          /* ---------- MUST HAVE TOP + BOTTOM ---------- */
-         if (tops.length === 0 || bottoms.length === 0) return false;
+         if (realTops.length === 0 || bottoms.length === 0) return false;
 
          /* ---------- MAX ONE JACKET ---------- */
          if (jackets.length > 1) return false;
