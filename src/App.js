@@ -16,6 +16,7 @@ function App() {
           <Route path="/add" element={<AddClothes />} />
           <Route path="/calendar" element={<CalendarPage />} />
           <Route path="/chat" element={<Chatbot />} />
+          <Route path="/analytics" element={<Analytics />} />
         </Routes>
 
         <nav className="bottom-nav">
@@ -24,6 +25,7 @@ function App() {
           <Link to="/add"></Link>
           <Link to="/calendar"></Link>
           <Link to="/chat"></Link>
+          <Link to="/analytics"></Link>
         </nav>
       </div>
     </Router>
