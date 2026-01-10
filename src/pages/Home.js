@@ -110,6 +110,95 @@ function Home() {
          });
    };
 
+   const TOP_TYPES = [
+      "t-shirt",
+      "long-sleeve t-shirt",
+      "sleeveless tank top",
+      "hoodie",
+      "blouse",
+      "button-up shirt",
+      "denim jacket",
+      "leather jacket",
+      "sweater",
+      "cardigan",
+      "polo shirt",
+      "v-neck shirt",
+      "crew neck t-shirt",
+      "turtleneck",
+      "off-shoulder top",
+      "cropped top",
+      "fitted shirt",
+      "loose hoodie"
+   ];
+
+   const BOTTOM_TYPES = [
+      "trousers",
+      "jeans",
+      "shorts",
+      "cargo pants",
+      "sweatpants",
+      "mini skirt",
+      "midi skirt",
+      "maxi skirt",
+      "pencil skirt",
+      "pleated skirt"
+   ];
+
+   const DRESS_TYPES = [
+      "dress",
+      "summer dress",
+      "cocktail dress",
+      "maxi dress",
+      "jumpsuit",
+      "overalls"
+   ];
+
+   const TOP_HEAVINESS = {
+      "t-shirt": "light",
+      "long-sleeve t-shirt": "medium",
+      "sleeveless tank top": "light",
+      "hoodie": "heavy",
+      "blouse": "light",
+      "button-up shirt": "medium",
+      "sweater": "heavy",
+      "cardigan": "medium",
+      "polo shirt": "light",
+      "v-neck shirt": "light",
+      "crew neck t-shirt": "light",
+      "turtleneck": "heavy",
+      "off-shoulder top": "light",
+      "cropped top": "light",
+      "fitted shirt": "medium",
+      "loose hoodie": "heavy",
+      "denim jacket": "medium",
+      "leather jacket": "medium",
+   };
+
+   const BOTTOM_HEAVINESS = {
+      "shorts": "light",
+      "mini skirt": "light",
+      "midi skirt": "light",
+      "maxi skirt": "medium",
+      "jeans": "medium",
+      "trousers": "medium",
+      "cargo pants": "medium",
+      "pencil skirt": "medium",
+      "pleated skirt": "light",
+      "sweatpants": "heavy",
+   };
+
+   const DRESS_HEAVINESS = {
+      "dress": "medium",
+      "summer dress": "light",
+      "cocktail dress": "medium",
+      "maxi dress": "medium",
+      "jumpsuit": "medium",
+      "overalls": "heavy",
+   };
+
+
+
+
    const pickWeatherAppropriateOutfit = (outfits, weatherCondition, style) => {
       if (!outfits || outfits.length === 0) {
          setOutfitData(null);
@@ -120,55 +209,80 @@ function Home() {
       const isCold = temp <= 18;
       const isHot = temp >= 25;
 
-      const isTop = (t) =>
-         /(shirt|t-shirt|blouse|sweater|long-sleeve|top)/i.test(t);
+      const normalize = (t) => t?.toLowerCase().trim();
 
-      const isBottom = (t) =>
-         /(trousers|jeans|pants|skirt|cargo)/i.test(t);
+      const isTop = (t) => TOP_TYPES.includes(normalize(t));
+      const isBottom = (t) => BOTTOM_TYPES.includes(normalize(t));
+      const isDress = (t) => DRESS_TYPES.includes(normalize(t));
 
+      // Jackets are tops but treated as optional layers
       const isJacket = (t) =>
-         /(jacket|hoodie|coat|cardigan)/i.test(t);
+         ["denim jacket", "leather jacket", "cardigan"].includes(normalize(t));
 
-      const isDress = (t) =>
-         /(dress|jumpsuit)/i.test(t);
+      const getHeaviness = (item) => {
+         const type = normalize(item.type);
+         return (
+            TOP_HEAVINESS[type] ||
+            BOTTOM_HEAVINESS[type] ||
+            DRESS_HEAVINESS[type] ||
+            "medium"
+         );
+      };
+
 
       const filtered = outfits.filter((pair) => {
          const items = pair.filter(Boolean);
 
-         // STYLE FILTER
+         /* ---------- STYLE FILTER ---------- */
          if (style !== "all") {
             if (!items.some(i => i.style?.toLowerCase() === style)) return false;
          }
 
-         // DRESS = FULL OUTFIT
-         if (items.length === 1 && isDress(items[0].type)) return true;
+         /* ---------- DRESS = FULL OUTFIT ---------- */
+         if (items.length === 1 && isDress(items[0].type)) {
+            const heaviness = getHeaviness(items[0]);
+            if (isCold && heaviness === "light") return false;
+            if (isHot && heaviness === "heavy") return false;
+            return true;
+         }
 
          const tops = items.filter(i => isTop(i.type));
          const bottoms = items.filter(i => isBottom(i.type));
          const jackets = items.filter(i => isJacket(i.type));
 
-         // MUST HAVE TOP + BOTTOM
+         /* ---------- MUST HAVE TOP + BOTTOM ---------- */
          if (tops.length === 0 || bottoms.length === 0) return false;
 
-         // JACKET ONLY IF TOP + BOTTOM EXIST (already guaranteed here)
+         /* ---------- MAX ONE JACKET ---------- */
          if (jackets.length > 1) return false;
 
-         // WEATHER RULES
+         /* ---------- WEATHER RULES ---------- */
          for (const item of items) {
-            const type = item.type.toLowerCase();
+            const heaviness = getHeaviness(item);
+            const type = normalize(item.type);
 
+            /* ---------- COLD WEATHER ---------- */
             if (isCold) {
-               if (/(shorts|mini|sleeveless|tank|crop|short sleeve)/i.test(type)) {
-                  return false;
-               }
+               // No very light items unless layered with a jacket
+               if (heaviness === "light" && !isJacket(type)) return false;
             }
 
+            /* ---------- HOT WEATHER ---------- */
             if (isHot) {
-               if (/(hoodie|jacket|coat|sweater|thick)/i.test(type)) {
-                  return false;
-               }
+               // No heavy items at all
+               if (heaviness === "heavy") return false;
+
+               // Jackets are never appropriate in hot weather
+               if (isJacket(type)) return false;
+            }
+
+            /* ---------- MILD WEATHER ---------- */
+            if (!isCold && !isHot) {
+               // Avoid extremes on mild days
+               if (heaviness === "heavy" && !isJacket(type)) return false;
             }
          }
+
 
          return true;
       });
@@ -180,6 +294,7 @@ function Home() {
 
       setOutfitData(chosen);
    };
+
 
 
 
