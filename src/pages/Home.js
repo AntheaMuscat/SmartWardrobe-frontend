@@ -7,6 +7,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 function Home() {
    const [weatherData, setWeatherData] = useState(null);
    const [allOutfits, setAllOutfits] = useState([]);
+   const [allItems, setAllItems] = useState([]);
    const [outfitData, setOutfitData] = useState(null);
    const [selectedStyle, setSelectedStyle] = useState("all");
    const [availableStyles, setAvailableStyles] = useState(["all"]);
@@ -93,19 +94,27 @@ function Home() {
             const outfits = data.outfits || [];
             setAllOutfits(outfits);
 
+            const flatItems = outfits.flat().filter(Boolean);
+            const uniqueMap = new Map();
+            flatItems.forEach((item) => {
+               const key = item.image_path;
+               if (!uniqueMap.has(key)) uniqueMap.set(key, item);
+            });
+            const uniqueItems = Array.from(uniqueMap.values());
+            setAllItems(uniqueItems);
+
             const styles = new Set(["all"]);
-            outfits.forEach((pair) =>
-               pair.forEach((item) => {
-                  if (item?.style) styles.add(item.style.toLowerCase());
-               })
-            );
+            uniqueItems.forEach((item) => {
+               if (item?.style) styles.add(item.style.toLowerCase());
+            });
 
             setAvailableStyles([...styles]);
-            pickWeatherAppropriateOutfit(outfits, weatherCondition, selectedStyle);
+            pickWeatherAppropriateOutfit(uniqueItems, weatherCondition, selectedStyle);
          })
          .catch((err) => {
             console.error("Outfit fetch error:", err);
             setAllOutfits([]);
+            setAllItems([]);
             setOutfitData(null);
          });
    };
@@ -230,8 +239,42 @@ function Home() {
    ];
 
 
-   const pickWeatherAppropriateOutfit = (outfits, weatherCondition, style) => {
-      if (!outfits || outfits.length === 0) {
+   const getHeaviness = (item) => {
+      const type = normalize(item.type);
+      return (
+         TOP_HEAVINESS[type] ||
+         BOTTOM_HEAVINESS[type] ||
+         DRESS_HEAVINESS[type] ||
+         "medium"
+      );
+   };
+
+   const isItemAppropriate = (item, isCold, isHot) => {
+      const type = normalize(item.type);
+      const heaviness = getHeaviness(item);
+
+      if (isCold) {
+         if (COLD_FORBIDDEN.includes(type)) return false;
+         if (isBottom(type) && heaviness === "light") return false;
+         if (isRealTop(type) && heaviness === "light") return false;
+      }
+
+      if (isHot) {
+         if (HOT_FORBIDDEN.includes(type)) return false;
+         if (heaviness === "heavy") return false;
+      }
+
+      if (!isCold && !isHot) {
+         if (heaviness === "heavy" && !isJacket(type)) return false;
+      }
+
+      return true;
+   };
+
+   const pickRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+   const pickWeatherAppropriateOutfit = (items, weatherCondition, style) => {
+      if (!items || items.length === 0) {
          setOutfitData(null);
          return;
       }
@@ -239,90 +282,92 @@ function Home() {
       const temp = weatherData?.temperature ?? 20;
       const isCold = temp <= 18;
       const isHot = temp >= 25;
+      const styleLower = style.toLowerCase();
 
-      const getHeaviness = (item) => {
-         const type = normalize(item.type);
-         return (
-            TOP_HEAVINESS[type] ||
-            BOTTOM_HEAVINESS[type] ||
-            DRESS_HEAVINESS[type] ||
-            "medium"
-         );
-      };
+      const appropriateItems = items.filter((item) =>
+         isItemAppropriate(item, isCold, isHot)
+      );
 
-      const filtered = outfits.filter((pair) => {
-         const items = pair.filter(Boolean);
+      if (appropriateItems.length === 0) {
+         setOutfitData(null);
+         return;
+      }
 
-         /* ---------- STYLE FILTER ---------- */
-         if (style !== "all") {
-            if (!items.every(i => i.style?.toLowerCase() === style)) return false;
-         }
+      // Dresses
+      let dressOutfit = null;
+      const dresses = appropriateItems.filter((i) => isDress(i.type));
+      const styledDresses = dresses.filter((i) => normalize(i.style) === styleLower);
+      const useDresses = style !== "all" && styledDresses.length > 0 ? styledDresses : dresses;
+      if (useDresses.length > 0) {
+         dressOutfit = [pickRandom(useDresses)];
+      }
 
+      // Top + Bottom + Optional Jacket
+      let tbOutfit = [];
+      const tops = appropriateItems.filter((i) => isRealTop(i.type));
+      const styledTops = tops.filter((i) => normalize(i.style) === styleLower);
+      const useTops = style !== "all" && styledTops.length > 0 ? styledTops : tops;
 
-         /* ---------- DRESS = FULL OUTFIT ---------- */
-         if (items.length === 1 && isDress(items[0].type)) {
-            const heaviness = getHeaviness(items[0]);
-            if (isCold && heaviness === "light") return false;
-            if (isHot && heaviness === "heavy") return false;
-            return true;
-         }
+      const bottomsA = appropriateItems.filter((i) => isBottom(i.type));
+      const styledBottoms = bottomsA.filter((i) => normalize(i.style) === styleLower);
+      const useBottoms = style !== "all" && styledBottoms.length > 0 ? styledBottoms : bottomsA;
 
-         const realTops = items.filter(i => isRealTop(i.type));
-         const bottoms = items.filter(i => isBottom(i.type));
-         const jackets = items.filter(i => isJacket(i.type));
+      const jacketsA = appropriateItems.filter((i) => isJacket(i.type));
+      const styledJackets = jacketsA.filter((i) => normalize(i.style) === styleLower);
+      const useJackets = style !== "all" && styledJackets.length > 0 ? styledJackets : jacketsA;
 
-         /* ---------- MUST HAVE TOP + BOTTOM ---------- */
-         if (realTops.length === 0 || bottoms.length === 0) return false;
+      if (useTops.length > 0 && useBottoms.length > 0) {
+         const top = pickRandom(useTops);
+         const bottom = pickRandom(useBottoms);
+         tbOutfit = [top, bottom];
 
-         /* ---------- MAX ONE JACKET ---------- */
-         if (jackets.length > 1) return false;
-
-         for (const item of items) {
-            const type = normalize(item.type);
-            const heaviness = getHeaviness(item);
-
-            /* ---------- COLD WEATHER ---------- */
-            if (isCold) {
-               // Absolutely forbidden items
-               if (COLD_FORBIDDEN.includes(type)) return false;
-
-               // Bottoms must not be light
-               if (isBottom(type) && heaviness === "light") return false;
-
-               // Tops must be medium or heavy
-               if (isRealTop(type) && heaviness === "light") return false;
-            }
-
-            /* ---------- HOT WEATHER ---------- */
-            if (isHot) {
-               if (HOT_FORBIDDEN.includes(type)) return false;
-               if (heaviness === "heavy") return false;
-            }
-
-            /* ---------- MILD WEATHER ---------- */
-            if (!isCold && !isHot) {
-               if (heaviness === "heavy" && !isJacket(type)) return false;
+         if (useJackets.length > 0) {
+            let addJacket = isCold || (!isHot && Math.random() > 0.5);
+            if (addJacket) {
+               const jacket = pickRandom(useJackets);
+               tbOutfit.push(jacket);
             }
          }
-         return true;
-      });
+      }
 
-      const chosen =
-         filtered.length > 0
-            ? filtered[Math.floor(Math.random() * filtered.length)]
-            : outfits[Math.floor(Math.random() * outfits.length)];
+      const hasStyled = (arr) =>
+         arr.some((i) => normalize(i.style) === styleLower);
 
-      setOutfitData(chosen);
+      if (style === "all") {
+         if (dressOutfit && tbOutfit.length > 0) {
+            setOutfitData(Math.random() > 0.5 ? dressOutfit : tbOutfit);
+         } else if (dressOutfit) {
+            setOutfitData(dressOutfit);
+         } else if (tbOutfit.length > 0) {
+            setOutfitData(tbOutfit);
+         } else {
+            setOutfitData(null);
+         }
+      } else {
+         const dressHas = dressOutfit && hasStyled(dressOutfit);
+         const tbHas = tbOutfit.length > 0 && hasStyled(tbOutfit);
+
+         if (dressHas && tbHas) {
+            setOutfitData(Math.random() > 0.5 ? dressOutfit : tbOutfit);
+         } else if (dressHas) {
+            setOutfitData(dressOutfit);
+         } else if (tbHas) {
+            setOutfitData(tbOutfit);
+         } else if (tbOutfit.length > 0) {
+            setOutfitData(tbOutfit);
+         } else if (dressOutfit) {
+            setOutfitData(dressOutfit);
+         } else {
+            setOutfitData(null);
+         }
+      }
    };
 
-
-
-
    useEffect(() => {
-      if (allOutfits.length > 0 && weatherData) {
-         pickWeatherAppropriateOutfit(allOutfits, weatherData.condition, selectedStyle);
+      if (allItems.length > 0 && weatherData) {
+         pickWeatherAppropriateOutfit(allItems, weatherData.condition, selectedStyle);
       }
-   }, [selectedStyle, allOutfits, weatherData]);
+   }, [selectedStyle, allItems, weatherData]);
 
    //Weather suggestion
    const getWeatherSuggestion = (temp, condition) => {
@@ -442,7 +487,7 @@ function Home() {
                                     key={i}
                                     src={item.image_path}
                                     alt={item.type}
-                                    className="img-fluid"
+                                    className="img-fluid mb-3"
                                     style={{
                                        maxWidth: "260px",
                                        borderRadius: "20px",
@@ -457,7 +502,7 @@ function Home() {
                         {outfitData.map(
                            (item, i) =>
                               item && (
-                                 <div key={i}>
+                                 <div key={i} className="mb-3">
                                     <h5 className="fw-bold" style={{ color: colors.primary }}>
                                        {item.type}
                                     </h5>
