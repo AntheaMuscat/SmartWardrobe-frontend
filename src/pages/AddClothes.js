@@ -24,7 +24,7 @@ function AddClothes() {
       };
 
       fetchHumidity();
-      const interval = setInterval(fetchHumidity, 600000); // every 10 minutes
+      const interval = setInterval(fetchHumidity, 30000); // every 30 seconds
       return () => clearInterval(interval);
    }, []);
 
