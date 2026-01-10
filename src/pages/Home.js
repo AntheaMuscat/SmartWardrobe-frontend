@@ -25,7 +25,7 @@ function Home() {
    useEffect(() => {
       const apiKey = "152ed82b5242e33c5906ac1fd3372c22";
       const cacheKey = "weatherCache";
-      const cacheDuration = 10 * 60 * 1000;
+      const cacheDuration = 10 * 60 * 1000; // 10 minutes
 
       const cached = localStorage.getItem(cacheKey);
       if (cached) {
@@ -89,7 +89,7 @@ function Home() {
 
    // Fetch all outfits from backend
    const fetchAllOutfits = (weatherCondition) => {
-      fetch(`https://antheamuscat-smart-wardrobe-backend.hf.space/wardrobe`)
+      fetch(`https://antheamuscat-smart-wardrobe-backend.hf.space/wardrobe?nocache=${Date.now()}`)
          .then((res) => res.json())
          .then((data) => {
             const outfits = data.outfits || [];
@@ -114,34 +114,46 @@ function Home() {
             console.error("Outfit fetch error:", err);
             setAllOutfits([]);
             setAllItems([]);
-            setOutfitData(null);
          });
    };
 
-   // ──────────────
-   // Clothing Categories & Heaviness
-   // ──────────────
+   // ────────────────────────────────────────────────────────────────────────────────
+   //  Clothing Categories & Heaviness
+   // ────────────────────────────────────────────────────────────────────────────────
+
    const TOP_TYPES = [
       "t-shirt", "long-sleeve t-shirt", "sleeveless tank top", "blouse",
       "button-up shirt", "polo shirt", "v-neck shirt", "crew neck t-shirt",
       "turtleneck", "off-shoulder top", "cropped top", "fitted shirt", "loose hoodie"
    ];
+
    const OUTERWEAR_TYPES = ["denim jacket", "leather jacket", "cardigan"];
-   const BOTTOM_TYPES = ["trousers", "jeans", "shorts", "cargo pants", "sweatpants",
-      "mini skirt", "midi skirt", "maxi skirt", "pencil skirt", "pleated skirt"];
+
+   const BOTTOM_TYPES = [
+      "trousers", "jeans", "shorts", "cargo pants", "sweatpants",
+      "mini skirt", "midi skirt", "maxi skirt", "pencil skirt", "pleated skirt"
+   ];
+
    const DRESS_TYPES = ["dress", "summer dress", "cocktail dress", "maxi dress", "jumpsuit", "overalls"];
 
    const TOP_HEAVINESS = {
       "t-shirt": "light", "long-sleeve t-shirt": "medium", "sleeveless tank top": "light",
-      "blouse": "light", "button-up shirt": "medium", "polo shirt": "light", "v-neck shirt": "light",
-      "crew neck t-shirt": "light", "turtleneck": "heavy", "off-shoulder top": "light",
-      "cropped top": "light", "fitted shirt": "medium", "loose hoodie": "heavy",
+      "blouse": "light", "button-up shirt": "medium", "polo shirt": "light",
+      "v-neck shirt": "light", "crew neck t-shirt": "light", "turtleneck": "heavy",
+      "off-shoulder top": "light", "cropped top": "light", "fitted shirt": "medium",
+      "loose hoodie": "heavy"
    };
-   const OUTERWEAR_HEAVINESS = { "denim jacket": "medium", "leather jacket": "medium", "cardigan": "medium" };
+
+   const OUTERWEAR_HEAVINESS = {
+      "denim jacket": "medium", "leather jacket": "medium", "cardigan": "medium"
+   };
+
    const BOTTOM_HEAVINESS = {
-      "shorts": "light", "mini skirt": "light", "midi skirt": "light", "maxi skirt": "medium", "jeans": "medium",
-      "trousers": "medium", "cargo pants": "medium", "pencil skirt": "medium", "pleated skirt": "light", "sweatpants": "heavy"
+      "shorts": "light", "mini skirt": "light", "midi skirt": "light", "maxi skirt": "medium",
+      "jeans": "medium", "trousers": "medium", "cargo pants": "medium", "pencil skirt": "medium",
+      "pleated skirt": "light", "sweatpants": "heavy"
    };
+
    const DRESS_HEAVINESS = {
       "dress": "medium", "summer dress": "light", "cocktail dress": "medium", "maxi dress": "medium",
       "jumpsuit": "medium", "overalls": "heavy"
@@ -151,6 +163,7 @@ function Home() {
    const HOT_FORBIDDEN = ["hoodie", "sweater", "turtleneck", "loose hoodie"];
 
    const normalize = (t) => t?.toLowerCase().trim();
+
    const isTop = (t) => TOP_TYPES.includes(normalize(t));
    const isOuterwear = (t) => OUTERWEAR_TYPES.includes(normalize(t));
    const isBottom = (t) => BOTTOM_TYPES.includes(normalize(t));
@@ -159,7 +172,13 @@ function Home() {
 
    const getHeaviness = (item) => {
       const type = normalize(item.type);
-      return TOP_HEAVINESS[type] || OUTERWEAR_HEAVINESS[type] || BOTTOM_HEAVINESS[type] || DRESS_HEAVINESS[type] || "medium";
+      return (
+         TOP_HEAVINESS[type] ||
+         OUTERWEAR_HEAVINESS[type] ||
+         BOTTOM_HEAVINESS[type] ||
+         DRESS_HEAVINESS[type] ||
+         "medium"
+      );
    };
 
    const isItemAppropriate = (item, isCold, isHot) => {
@@ -182,57 +201,72 @@ function Home() {
 
    const pickRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
-   // ──────────────
-   // Pick outfit based on style and weather
-   // ──────────────
-   const pickWeatherAppropriateOutfit = useCallback((items, weatherCondition, style) => {
-      if (!items || items.length === 0) { setOutfitData(null); return; }
+   // ────────────────────────────────────────────────────────────────────────────────
+   // Pick outfit based on style and weather (fixed for style changes)
+   // ────────────────────────────────────────────────────────────────────────────────
+   const pickWeatherAppropriateOutfit = useCallback((items, weatherCondition) => {
+      if (!items || items.length === 0) {
+         setOutfitData(null);
+         return;
+      }
 
       const temp = weatherData?.temperature ?? 20;
       const isCold = temp <= 18;
       const isHot = temp >= 25;
-      const styleLower = style.toLowerCase();
+      const styleLower = selectedStyle.toLowerCase();  // ← Use current selectedStyle
 
-      const appropriateItems = items.filter((item) => isItemAppropriate(item, isCold, isHot));
-      if (appropriateItems.length === 0) { setOutfitData(null); return; }
+      const appropriateItems = items.filter((item) =>
+         isItemAppropriate(item, isCold, isHot)
+      );
+
+      if (appropriateItems.length === 0) {
+         setOutfitData(null);
+         return;
+      }
 
       // Dresses
+      let dressOutfit = null;
       const dresses = appropriateItems.filter((i) => isDress(i.type));
       const styledDresses = dresses.filter((i) => normalize(i.style) === styleLower);
-      const useDresses = style !== "all" && styledDresses.length > 0 ? styledDresses : dresses;
-      const dressOutfit = useDresses.length > 0 ? [pickRandom(useDresses)] : null;
+      const useDresses = styleLower !== "all" && styledDresses.length > 0 ? styledDresses : dresses;
+      if (useDresses.length > 0) {
+         dressOutfit = [pickRandom(useDresses)];
+      }
 
-      // Base: Top + Bottom
+      // Base: Real top + Bottom
+      let baseOutfit = [];
       const realTops = appropriateItems.filter((i) => isRealTop(i.type));
       const styledRealTops = realTops.filter((i) => normalize(i.style) === styleLower);
-      const useRealTops = style !== "all" && styledRealTops.length > 0 ? styledRealTops : realTops;
+      const useRealTops = styleLower !== "all" && styledRealTops.length > 0 ? styledRealTops : realTops;
 
       const bottoms = appropriateItems.filter((i) => isBottom(i.type));
       const styledBottoms = bottoms.filter((i) => normalize(i.style) === styleLower);
-      const useBottoms = style !== "all" && styledBottoms.length > 0 ? styledBottoms : bottoms;
+      const useBottoms = styleLower !== "all" && styledBottoms.length > 0 ? styledBottoms : bottoms;
 
-      let baseOutfit = [];
       if (useRealTops.length > 0 && useBottoms.length > 0) {
          baseOutfit = [pickRandom(useRealTops), pickRandom(useBottoms)];
       }
 
-      // Optional outerwear
+      // Optional outerwear (jacket/cardigan)
       let finalOutfit = baseOutfit.length > 0 ? [...baseOutfit] : dressOutfit || [];
       const outerwearItems = appropriateItems.filter((i) => isOuterwear(i.type));
       const styledOuterwear = outerwearItems.filter((i) => normalize(i.style) === styleLower);
-      const useOuterwear = style !== "all" && styledOuterwear.length > 0 ? styledOuterwear : outerwearItems;
+      const useOuterwear = styleLower !== "all" && styledOuterwear.length > 0 ? styledOuterwear : outerwearItems;
+
       if (useOuterwear.length > 0 && finalOutfit.length > 0) {
          const shouldAdd = isCold || (!isHot && Math.random() > 0.5);
-         if (shouldAdd) finalOutfit.push(pickRandom(useOuterwear));
+         if (shouldAdd) {
+            finalOutfit.push(pickRandom(useOuterwear));
+         }
       }
 
       setOutfitData(finalOutfit.length > 0 ? finalOutfit : null);
-   }, [weatherData]);
+   }, [weatherData, selectedStyle]);  // ← Depends on selectedStyle!
 
-   // Recompute outfit whenever style, items, or weather changes
+   // Recompute outfit when style, items, or weather changes
    useEffect(() => {
       if (allItems.length > 0 && weatherData) {
-         pickWeatherAppropriateOutfit(allItems, weatherData.condition, selectedStyle);
+         pickWeatherAppropriateOutfit(allItems, weatherData.condition);
       }
    }, [selectedStyle, allItems, weatherData, pickWeatherAppropriateOutfit]);
 
@@ -242,7 +276,6 @@ function Home() {
       if (condition === "rainy") return "🌧 Rainy — bring an umbrella and consider a light jacket.";
       return "🌤 Mild & comfortable — shirt + trousers is perfect.";
    };
-
 
    return (
       <>
@@ -276,9 +309,15 @@ function Home() {
                   <p className="lead mb-4" style={{ color: colors.textMuted }}>
                      Here’s what the sky looks like today.
                   </p>
+
                   <div className="d-flex flex-column flex-md-row justify-content-around align-items-center">
                      <div className="text-center mb-4 mb-md-0">
-                        <img src={weatherData.icon} alt="Weather" className="img-fluid mb-3" style={{ width: "100px" }} />
+                        <img
+                           src={weatherData.icon}
+                           alt="Weather"
+                           className="img-fluid mb-3"
+                           style={{ width: "100px" }}
+                        />
                         <h1 className="fw-bold" style={{ color: colors.primary, fontSize: "4rem" }}>
                            {weatherData.temperature}°C
                         </h1>
@@ -287,6 +326,7 @@ function Home() {
                            {getWeatherSuggestion(weatherData.temperature, weatherData.condition)}
                         </p>
                      </div>
+
                      <div className="text-md-start text-center">
                         <h4 style={{ color: colors.primary }}>{weatherData.location}</h4>
                         <p>Feels like {weatherData.feelsLike}°</p>
@@ -298,13 +338,20 @@ function Home() {
             )}
 
             <div className="mb-4">
-               <label htmlFor="style" className="fw-semibold me-2">Choose your style:</label>
+               <label htmlFor="style" className="fw-semibold me-2">
+                  Choose your style:
+               </label>
                <select
                   id="style"
                   value={selectedStyle}
                   onChange={(e) => setSelectedStyle(e.target.value)}
                   className="form-select"
-                  style={{ width: "200px", display: "inline-block", borderRadius: "10px", border: `2px solid ${colors.primary}` }}
+                  style={{
+                     width: "200px",
+                     display: "inline-block",
+                     borderRadius: "10px",
+                     border: `2px solid ${colors.primary}`,
+                  }}
                >
                   {availableStyles.map((style) => (
                      <option key={style} value={style}>
@@ -317,7 +364,12 @@ function Home() {
             {outfitData ? (
                <motion.div
                   className="rounded-5 shadow-lg p-5 position-relative"
-                  style={{ width: "100%", maxWidth: "900px", background: colors.surface, boxShadow: `0 20px 60px rgba(0,0,0,0.12)` }}
+                  style={{
+                     width: "100%",
+                     maxWidth: "900px",
+                     background: colors.surface,
+                     boxShadow: `0 20px 60px rgba(0,0,0,0.12)`,
+                  }}
                   initial={{ opacity: 0, y: 50 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 1, delay: 0.4 }}
@@ -331,21 +383,34 @@ function Home() {
                            {outfitData.map((item, i) =>
                               item && (
                                  <motion.div key={i} className="text-center" whileHover={{ scale: 1.05 }}>
-                                    <img src={item.image_path} alt={item.type} className="img-fluid rounded-4 mb-2"
-                                       style={{ maxWidth: "220px", maxHeight: "280px", objectFit: "contain", backgroundColor: "#f8f9fa" }} />
-                                    <p className="mb-1 fw-bold" style={{ fontSize: "1rem" }}>{item.type}</p>
+                                    <img
+                                       src={item.image_path}
+                                       alt={item.type}
+                                       className="img-fluid rounded-4 mb-2"
+                                       style={{
+                                          maxWidth: "220px",
+                                          maxHeight: "280px",
+                                          objectFit: "contain",
+                                          backgroundColor: "#f8f9fa",
+                                       }}
+                                    />
+                                    <p className="mb-1 fw-bold" style={{ fontSize: "1rem" }}>
+                                       {item.type}
+                                    </p>
                                     {isOuterwear(item.type) && <small className="text-muted">Layer</small>}
                                  </motion.div>
                               )
                            )}
                         </div>
                      </div>
+
                      <div className="col-md-6 text-md-start text-center">
                         {outfitData.map((item, i) =>
                            item && (
                               <div key={i} className="mb-3">
                                  <h5 className="fw-bold" style={{ color: colors.primary }}>
-                                    {item.type}{isOuterwear(item.type) && <small className="text-muted ms-2">(Layer)</small>}
+                                    {item.type}
+                                    {isOuterwear(item.type) && <small className="text-muted ms-2">(Layer)</small>}
                                  </h5>
                                  <p style={{ color: colors.textMuted }}>
                                     Style: <strong>{item.style}</strong> | Colour: {item.colour}
@@ -357,10 +422,17 @@ function Home() {
                   </div>
                </motion.div>
             ) : (
-               <motion.div className="p-4 rounded-4 text-center" style={{ background: "#fff3cd", border: "1px solid #ffeaa7" }}
-                  initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+               <motion.div
+                  className="p-4 rounded-4 text-center"
+                  style={{ background: "#fff3cd", border: "1px solid #ffeaa7" }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+               >
                   <p className="mb-2 fw-bold">No outfit found 😔</p>
-                  <p className="mb-0 small">Make sure your wardrobe includes <em>shirts</em>, <em>trousers</em>, or <em>dresses</em> — perfect for daily combinations.</p>
+                  <p className="mb-0 small">
+                     Make sure your wardrobe includes <em>shirts</em>, <em>trousers</em>, or{" "}
+                     <em>dresses</em> — perfect for daily combinations.
+                  </p>
                </motion.div>
             )}
          </div>
