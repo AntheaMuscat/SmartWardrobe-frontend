@@ -211,6 +211,25 @@ function Home() {
       "overalls": "heavy",
    };
 
+   const COLD_FORBIDDEN = [
+      "cropped top",
+      "sleeveless tank top",
+      "off-shoulder top",
+      "shorts",
+      "mini skirt"
+   ];
+
+   const HOT_FORBIDDEN = [
+      "hoodie",
+      "sweater",
+      "turtleneck",
+      "jacket",
+      "denim jacket",
+      "leather jacket",
+      "cardigan"
+   ];
+
+
    const pickWeatherAppropriateOutfit = (outfits, weatherCondition, style) => {
       if (!outfits || outfits.length === 0) {
          setOutfitData(null);
@@ -236,8 +255,9 @@ function Home() {
 
          /* ---------- STYLE FILTER ---------- */
          if (style !== "all") {
-            if (!items.some(i => i.style?.toLowerCase() === style)) return false;
+            if (!items.every(i => i.style?.toLowerCase() === style)) return false;
          }
+
 
          /* ---------- DRESS = FULL OUTFIT ---------- */
          if (items.length === 1 && isDress(items[0].type)) {
@@ -257,34 +277,33 @@ function Home() {
          /* ---------- MAX ONE JACKET ---------- */
          if (jackets.length > 1) return false;
 
-         /* ---------- WEATHER RULES ---------- */
          for (const item of items) {
-            const heaviness = getHeaviness(item);
             const type = normalize(item.type);
+            const heaviness = getHeaviness(item);
 
             /* ---------- COLD WEATHER ---------- */
             if (isCold) {
-               // No very light items unless layered with a jacket
-               if (heaviness === "light" && !isJacket(type)) return false;
+               // Absolutely forbidden items
+               if (COLD_FORBIDDEN.includes(type)) return false;
+
+               // Bottoms must not be light
+               if (isBottom(type) && heaviness === "light") return false;
+
+               // Tops must be medium or heavy
+               if (isRealTop(type) && heaviness === "light") return false;
             }
 
             /* ---------- HOT WEATHER ---------- */
             if (isHot) {
-               // No heavy items at all
+               if (HOT_FORBIDDEN.includes(type)) return false;
                if (heaviness === "heavy") return false;
-
-               // Jackets are never appropriate in hot weather
-               if (isJacket(type)) return false;
             }
 
             /* ---------- MILD WEATHER ---------- */
             if (!isCold && !isHot) {
-               // Avoid extremes on mild days
                if (heaviness === "heavy" && !isJacket(type)) return false;
             }
          }
-
-
          return true;
       });
 
