@@ -106,8 +106,9 @@ function Outfits() {
                                  // pair may be legacy array [top, bottom] or new object {items, suggested_shoes, suggested_accessories}
                                  const isObject = pair && !Array.isArray(pair) && pair.items;
                                  const items = isObject ? pair.items : pair;
-                                 const shoes = isObject ? pair.suggested_shoes || [] : [];
-                                 const accessories = isObject ? pair.suggested_accessories || [] : [];
+                                 // support legacy arrays and new single-item keys
+                                 const shoes = isObject ? (pair.suggested_shoes ? (Array.isArray(pair.suggested_shoes) ? pair.suggested_shoes[0] : pair.suggested_shoe) : pair.suggested_shoe) : null;
+                                 const accessories = isObject ? (pair.suggested_accessories ? (Array.isArray(pair.suggested_accessories) ? pair.suggested_accessories[0] : pair.suggested_accessory) : pair.suggested_accessory) : null;
 
                                  return (
                                     <motion.div
@@ -180,34 +181,30 @@ function Outfits() {
                                           </p>
                                        </div>
 
-                                       {/* Per-outfit suggested shoes */}
-                                       {shoes && shoes.length > 0 && (
+                                       {/* Per-outfit suggested shoe (single) */}
+                                       {shoes && (
                                           <div style={{ marginTop: 16 }}>
-                                             <h6 style={{ color: colors.primary, marginBottom: 8 }}>Shoes</h6>
+                                             <h6 style={{ color: colors.primary, marginBottom: 8 }}>Recommended Shoe</h6>
                                              <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-                                                {shoes.map((s, si) => (
-                                                   <div key={si} style={{ width: 120, textAlign: "center" }}>
-                                                      <img src={s.image_path} alt={s.type} style={{ width: 120, height: 100, objectFit: "contain", borderRadius: 8, background: "#f8f9fa" }} />
-                                                      <div style={{ fontSize: 0.9, fontWeight: 600, color: colors.primary }}>{capitalizeWords(s.type)}</div>
-                                                      <div style={{ fontSize: 0.85, color: "#666" }}>{capitalizeWords(s.colour)}</div>
-                                                   </div>
-                                                ))}
+                                                <div style={{ width: 140, textAlign: "center" }}>
+                                                   <img src={shoes.image_path} alt={shoes.type} style={{ width: 140, height: 110, objectFit: "contain", borderRadius: 8, background: "#f8f9fa" }} />
+                                                   <div style={{ fontSize: 0.95, fontWeight: 600, color: colors.primary }}>{capitalizeWords(shoes.type)}</div>
+                                                   <div style={{ fontSize: 0.85, color: "#666" }}>{capitalizeWords(shoes.colour)}</div>
+                                                </div>
                                              </div>
                                           </div>
                                        )}
 
-                                       {/* Per-outfit suggested accessories */}
-                                       {accessories && accessories.length > 0 && (
+                                       {/* Per-outfit suggested accessory (single) */}
+                                       {accessories && (
                                           <div style={{ marginTop: 12 }}>
-                                             <h6 style={{ color: colors.primary, marginBottom: 8 }}>Accessories</h6>
+                                             <h6 style={{ color: colors.primary, marginBottom: 8 }}>Recommended Accessory</h6>
                                              <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-                                                {accessories.map((a, ai) => (
-                                                   <div key={ai} style={{ width: 110, textAlign: "center" }}>
-                                                      <img src={a.image_path} alt={a.type} style={{ width: 110, height: 90, objectFit: "contain", borderRadius: 8, background: "#f8f9fa" }} />
-                                                      <div style={{ fontSize: 0.88, fontWeight: 600, color: colors.primary }}>{capitalizeWords(a.type)}</div>
-                                                      <div style={{ fontSize: 0.78, color: "#666" }}>{capitalizeWords(a.colour)}</div>
-                                                   </div>
-                                                ))}
+                                                <div style={{ width: 120, textAlign: "center" }}>
+                                                   <img src={accessories.image_path} alt={accessories.type} style={{ width: 120, height: 100, objectFit: "contain", borderRadius: 8, background: "#f8f9fa" }} />
+                                                   <div style={{ fontSize: 0.9, fontWeight: 600, color: colors.primary }}>{capitalizeWords(accessories.type)}</div>
+                                                   <div style={{ fontSize: 0.78, color: "#666" }}>{capitalizeWords(accessories.colour)}</div>
+                                                </div>
                                              </div>
                                           </div>
                                        )}
