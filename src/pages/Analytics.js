@@ -28,7 +28,9 @@ function Analytics() {
    const [error, setError] = useState(null);
 
    useEffect(() => {
-      fetch("https://antheamuscat-smart-wardrobe-backend.hf.space/analytics")
+      fetch("https://antheamuscat-smart-wardrobe-backend.hf.space/analytics", {
+         credentials: "include", // 🔥 REQUIRED
+      })
          .then((res) => {
             if (!res.ok) throw new Error(`Status ${res.status}`);
             return res.json();
@@ -39,6 +41,7 @@ function Analytics() {
             setError(err.message || "Failed to load analytics");
          });
    }, []);
+
 
    if (error) return <p>Analytics error: {error}</p>;
    if (!data) return <p>Loading analytics...</p>;
