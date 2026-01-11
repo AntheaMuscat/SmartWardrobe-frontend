@@ -62,6 +62,12 @@ function Home() {
                condition,
             };
 
+            fetch("https://antheamuscat-smart-wardrobe-backend.hf.space/weather-log", {
+               method: "POST",
+               headers: { "Content-Type": "application/json" },
+               body: JSON.stringify(formatted),
+            });
+
             localStorage.setItem(
                cacheKey,
                JSON.stringify({ data: formatted, timestamp: Date.now() })
@@ -86,6 +92,7 @@ function Home() {
             fetchAllOutfits(fallback.condition);
          });
    }, []);
+
 
    // Fetch all outfits from backend
    const fetchAllOutfits = (weatherCondition) => {
