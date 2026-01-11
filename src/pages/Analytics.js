@@ -56,27 +56,14 @@ function Analytics() {
       return { name: it.name ?? it[0], count: it.count ?? it[1], image_url: it.image_url ?? null };
    });
 
-   // Color palettes (cycle if there are more items than colors)
-   const barPalette = [
-      colors.primary,
-      colors.accent1,
-      colors.accent2,
-      "#f59e0b",
-      "#ef4444",
-      "#06b6d4",
-   ];
+   // Generate visually distinct HSL colors for each item to avoid repeats
+   const generatePalette = (n, s = 68, l = 55) => {
+      if (!n || n <= 0) return [];
+      return Array.from({ length: n }, (_, i) => `hsl(${Math.round((360 * i) / n)}, ${s}%, ${l}%)`);
+   };
 
-   const piePalette = [
-      colors.primary,
-      colors.accent1,
-      colors.accent2,
-      "#f59e0b",
-      "#ef4444",
-      "#06b6d4",
-   ];
-
-   const barBackgrounds = normalizedMostWorn.map((_, i) => barPalette[i % barPalette.length]);
-   const pieBackgrounds = favorites.map((_, i) => piePalette[i % piePalette.length]);
+   const barBackgrounds = generatePalette(normalizedMostWorn.length, 62, 56);
+   const pieBackgrounds = generatePalette(favorites.length || 3, 62, 56);
 
    const mostWornChart = {
       labels: normalizedMostWorn.map((m) => m.name),
