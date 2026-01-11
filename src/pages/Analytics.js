@@ -1,38 +1,70 @@
 import { useEffect, useState } from "react";
 import { Bar, Pie } from "react-chartjs-2";
-import { Chart as ChartJS, BarElement, CategoryScale, LinearScale, ArcElement, Tooltip, Legend } from "chart.js";
+import {
+   Chart as ChartJS,
+   BarElement,
+   CategoryScale,
+   LinearScale,
+   ArcElement,
+   Tooltip,
+   Legend,
+   BarController,
+   PieController,
+} from "chart.js";
 
-ChartJS.register(BarElement, CategoryScale, LinearScale, ArcElement, Tooltip, Legend);
+ChartJS.register(
+   CategoryScale,
+   LinearScale,
+   BarElement,
+   ArcElement,
+   Tooltip,
+   Legend,
+   BarController,
+   PieController
+);
 
 function Analytics() {
    const [data, setData] = useState(null);
+   const [error, setError] = useState(null);
 
    useEffect(() => {
       fetch("https://antheamuscat-smart-wardrobe-backend.hf.space/analytics")
-         .then(res => res.json())
+         .then((res) => {
+            if (!res.ok) throw new Error(`Status ${res.status}`);
+            return res.json();
+         })
          .then(setData)
-         .catch(err => console.error("Analytics error:", err));
+         .catch((err) => {
+            console.error("Analytics error:", err);
+            setError(err.message || "Failed to load analytics");
+         });
    }, []);
 
+   if (error) return <p>Analytics error: {error}</p>;
    if (!data) return <p>Loading analytics...</p>;
 
-   // Most Worn Bar Chart
+   const mostWorn = Array.isArray(data.most_worn) ? data.most_worn : [];
+   const favorites = Array.isArray(data.favorites) ? data.favorites : [];
+
    const mostWornChart = {
-      labels: data.most_worn.map(([name]) => name),
-      datasets: [{
-         label: "Times Worn",
-         data: data.most_worn.map(([, count]) => count),
-         backgroundColor: "#6366f1",
-      }]
+      labels: mostWorn.map(([name]) => name),
+      datasets: [
+         {
+            label: "Times Worn",
+            data: mostWorn.map(([, count]) => count),
+            backgroundColor: "#6366f1",
+         },
+      ],
    };
 
-   // Favorite Styles Pie
    const favoritesPie = {
-      labels: data.favorites.map(([style]) => style.charAt(0).toUpperCase() + style.slice(1)),
-      datasets: [{
-         data: data.favorites.map(([, count]) => count),
-         backgroundColor: ["#6366f1", "#ec4899", "#10b981"],
-      }]
+      labels: favorites.map(([style]) => (style ? style.charAt(0).toUpperCase() + style.slice(1) : "")),
+      datasets: [
+         {
+            data: favorites.map(([, count]) => count),
+            backgroundColor: ["#6366f1", "#ec4899", "#10b981"],
+         },
+      ],
    };
 
    return (
@@ -43,7 +75,7 @@ function Analytics() {
             <div style={{ flex: 1, minWidth: "400px" }}>
                <h2>Most Worn Outfits</h2>
                <Bar data={mostWornChart} options={{ responsive: true }} />
-               <p>Total tracked events: {data.total_outfit_events}</p>
+               <p>Total tracked events: {data.total_outfit_events ?? 0}</p>
             </div>
 
             <div style={{ flex: 1, minWidth: "400px" }}>
