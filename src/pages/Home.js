@@ -66,7 +66,10 @@ function Home() {
                method: "POST",
                headers: { "Content-Type": "application/json" },
                body: JSON.stringify(formatted),
-            });
+            })
+               .then((res) => res.json().catch(() => null))
+               .then((json) => console.log("Weather log response:", json))
+               .catch((err) => console.warn("Weather log error:", err));
 
             localStorage.setItem(
                cacheKey,
