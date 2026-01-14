@@ -11,7 +11,8 @@ function Navbar() {
       { path: "/add", label: "Add Clothes" },
       { path: "/calendar", label: "Calendar" },
       { path: "/chatbot", label: "Chatbot" },
-      {path: "/analytics", label: "Analytics" }
+      {path: "/analytics", label: "Analytics" },
+      {path: "/sensors", label: "Sensors" },
    ];
 
    return (

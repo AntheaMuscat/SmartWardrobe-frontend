@@ -8,6 +8,7 @@ import Outfits from "./pages/Outfits";
 import CalendarPage from "./pages/CalendarPage";
 import Chatbot from "./pages/Chatbot";
 import Analytics from "./pages/Analytics";
+import SensorsInfo from "./pages/SensorsInfo";
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 
@@ -23,6 +24,7 @@ root.render(
       <Route path="/calendar" element={<CalendarPage />} />
       <Route path="/chatbot" element={<Chatbot />} />
       <Route path="/analytics" element={<Analytics />} />
+      <Route path="/sensors" element={<SensorsInfo />} />
     </Routes>
   </BrowserRouter>
 );
