@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import Navbar from "../components/Navbar";
 import { colors } from "../styles/theme";
 import { ToastContainer, toast } from "react-toastify";
@@ -32,63 +33,85 @@ export default function SensorsInfo() {
    return (
       <>
          <Navbar />
-         <div style={{
-            padding: "3rem",
-            minHeight: "100vh",
-            backgroundColor: colors.secondary,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: "2rem"
-         }}>
-            <h1 style={{ color: colors.primary, fontSize: "2.5rem", textAlign: "center" }}>
-               📡 Smart Wardrobe Sensor Dashboard
-            </h1>
-            <p style={{ textAlign: "center", color: "#555", maxWidth: "700px" }}>
-               Live temperature, humidity, motion, and LED status from your Raspberry Pi sensors.
-               Updates every 10 seconds.
-            </p>
+         <div
+            style={{
+               minHeight: "100vh",
+               background: `linear-gradient(135deg, ${colors.secondary}, ${colors.accent2})`,
+               padding: "3rem 2rem",
+               fontFamily: "'Inter', sans-serif",
+            }}
+         >
+            <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+               <motion.h1
+                  style={{
+                     color: colors.primary,
+                     fontSize: "2.8rem",
+                     textAlign: "center",
+                     marginBottom: "0.5rem",
+                  }}
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+               >
+                  📡 Smart Wardrobe Sensor Dashboard
+               </motion.h1>
+               <motion.p
+                  style={{ color: "#555", textAlign: "center", marginBottom: "2rem" }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.2, duration: 0.5 }}
+               >
+                  Live temperature, humidity, motion, and LED status from your Raspberry Pi sensors.
+                  Updates every 10 seconds.
+               </motion.p>
 
-            {loading ? (
-               <p style={{ textAlign: "center", fontSize: "1.2rem" }}>Loading sensor logs...</p>
-            ) : logs.length === 0 ? (
-               <p style={{ textAlign: "center", fontSize: "1.2rem" }}>No logs yet.</p>
-            ) : (
-               <div style={{
-                  width: "100%",
-                  maxWidth: "900px",
-                  backgroundColor: colors.white,
-                  borderRadius: "16px",
-                  padding: "2rem",
-                  boxShadow: "0 10px 25px rgba(0,0,0,0.1)"
-               }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "center" }}>
-                     <thead>
-                        <tr>
-                           <th style={{ padding: "0.75rem", borderBottom: "2px solid #eee" }}>Time</th>
-                           <th style={{ padding: "0.75rem", borderBottom: "2px solid #eee" }}>Temp (°C)</th>
-                           <th style={{ padding: "0.75rem", borderBottom: "2px solid #eee" }}>Humidity (%)</th>
-                           <th style={{ padding: "0.75rem", borderBottom: "2px solid #eee" }}>Motion</th>
-                           <th style={{ padding: "0.75rem", borderBottom: "2px solid #eee" }}>LED</th>
-                        </tr>
-                     </thead>
-                     <tbody>
-                        {logs.map((log, idx) => (
-                           <tr key={idx} style={{ borderBottom: "1px solid #f0f0f0" }}>
-                              <td style={{ padding: "0.75rem" }}>{new Date(log.timestamp).toLocaleString()}</td>
-                              <td style={{ padding: "0.75rem" }}>{log.temperature ?? "—"}</td>
-                              <td style={{ padding: "0.75rem" }}>{log.humidity ?? "—"}</td>
-                              <td style={{ padding: "0.75rem" }}>{log.motion_detected ? "✅" : "❌"}</td>
-                              <td style={{ padding: "0.75rem", display: "flex", justifyContent: "center", alignItems: "center", gap: "0.5rem" }}>
-                                 <span style={{ color: `rgb(${log.led_color?.join(",")})` }}>■</span>
-                                 {log.led_brightness ?? "—"}
-                              </td>
-                           </tr>
-                        ))}
-                     </tbody>
-                  </table>
-               </div>
-            )}
+               {loading ? (
+                  <p style={{ textAlign: "center", fontSize: "1.2rem" }}>Loading sensor logs...</p>
+               ) : logs.length === 0 ? (
+                  <p style={{ textAlign: "center", fontSize: "1.2rem" }}>No logs yet.</p>
+               ) : (
+                  <div
+                     style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+                        gap: "20px",
+                     }}
+                  >
+                     {logs.map((log, idx) => (
+                        <motion.div
+                           key={idx}
+                           style={{
+                              backgroundColor: colors.white,
+                              borderRadius: "16px",
+                              padding: "1.5rem",
+                              boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: "0.5rem",
+                              position: "relative",
+                           }}
+                           initial={{ opacity: 0, y: 20 }}
+                           animate={{ opacity: 1, y: 0 }}
+                           transition={{ delay: idx * 0.05 }}
+                        >
+                           <h4 style={{ color: colors.primary, marginBottom: "0.5rem" }}>
+                              {new Date(log.timestamp).toLocaleString()}
+                           </h4>
+                           <p style={{ margin: 0 }}><strong>Temperature:</strong> {log.temperature ?? "—"}°C</p>
+                           <p style={{ margin: 0 }}><strong>Humidity:</strong> {log.humidity ?? "—"}%</p>
+                           <p style={{ margin: 0 }}>
+                              <strong>Motion:</strong> {log.motion_detected ? "✅ Detected" : "❌ None"}
+                           </p>
+                           <p style={{ margin: 0, display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                              <strong>LED:</strong>{" "}
+                              <span style={{ color: `rgb(${log.led_color?.join(",")})` }}>■</span>
+                              {log.led_brightness ?? "—"}
+                           </p>
+                        </motion.div>
+                     ))}
+                  </div>
+               )}
+            </div>
          </div>
          <ToastContainer position="top-right" autoClose={3000} theme="colored" />
       </>
