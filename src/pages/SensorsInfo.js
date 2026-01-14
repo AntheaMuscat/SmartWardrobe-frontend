@@ -4,7 +4,7 @@ import { colors } from "../styles/theme";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-const PI_URL = "http://172.20.206.140:8000"; // replace with your Pi backend URL
+const PI_URL = "http://172.20.206.140:8000";
 
 export default function SensorsInfo() {
    const [logs, setLogs] = useState([]);
@@ -25,51 +25,68 @@ export default function SensorsInfo() {
 
    useEffect(() => {
       fetchSensorLogs();
-      const interval = setInterval(fetchSensorLogs, 10000); // refresh every 10s
+      const interval = setInterval(fetchSensorLogs, 10000);
       return () => clearInterval(interval);
    }, []);
 
    return (
       <>
          <Navbar />
-         <div style={{ padding: "2rem", minHeight: "100vh", backgroundColor: colors.secondary }}>
-            <h1 style={{ textAlign: "center", color: colors.primary }}>📡 Sensor Logs</h1>
+         <div style={{
+            padding: "3rem",
+            minHeight: "100vh",
+            backgroundColor: colors.secondary,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "2rem"
+         }}>
+            <h1 style={{ color: colors.primary, fontSize: "2.5rem", textAlign: "center" }}>
+               📡 Smart Wardrobe Sensor Dashboard
+            </h1>
+            <p style={{ textAlign: "center", color: "#555", maxWidth: "700px" }}>
+               Live temperature, humidity, motion, and LED status from your Raspberry Pi sensors.
+               Updates every 10 seconds.
+            </p>
 
             {loading ? (
-               <p style={{ textAlign: "center" }}>Loading sensor logs...</p>
+               <p style={{ textAlign: "center", fontSize: "1.2rem" }}>Loading sensor logs...</p>
             ) : logs.length === 0 ? (
-               <p style={{ textAlign: "center" }}>No logs yet.</p>
+               <p style={{ textAlign: "center", fontSize: "1.2rem" }}>No logs yet.</p>
             ) : (
-               <div style={{ display: "flex", flexDirection: "column", gap: "1rem", alignItems: "center" }}>
-                  {logs.map((log, idx) => (
-                     <div
-                        key={idx}
-                        style={{
-                           width: "100%",
-                           maxWidth: "600px",
-                           backgroundColor: colors.white,
-                           borderRadius: "12px",
-                           padding: "1rem 1.5rem",
-                           boxShadow: "0 6px 15px rgba(0,0,0,0.1)",
-                           display: "flex",
-                           justifyContent: "space-between",
-                           flexWrap: "wrap",
-                           gap: "0.5rem"
-                        }}
-                     >
-                        <div><strong>Time:</strong> {new Date(log.timestamp).toLocaleString()}</div>
-                        <div><strong>Temp:</strong> {log.temperature ?? "—"}°C</div>
-                        <div><strong>Humidity:</strong> {log.humidity ?? "—"}%</div>
-                        <div><strong>Motion:</strong> {log.motion_detected ? "✅" : "❌"}</div>
-                        <div>
-                           <strong>LED:</strong>
-                           <span style={{ marginLeft: 5, color: `rgb(${log.led_color?.join(",")})` }}>
-                              ■
-                           </span>
-                           {log.led_brightness ?? "—"}
-                        </div>
-                     </div>
-                  ))}
+               <div style={{
+                  width: "100%",
+                  maxWidth: "900px",
+                  backgroundColor: colors.white,
+                  borderRadius: "16px",
+                  padding: "2rem",
+                  boxShadow: "0 10px 25px rgba(0,0,0,0.1)"
+               }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "center" }}>
+                     <thead>
+                        <tr>
+                           <th style={{ padding: "0.75rem", borderBottom: "2px solid #eee" }}>Time</th>
+                           <th style={{ padding: "0.75rem", borderBottom: "2px solid #eee" }}>Temp (°C)</th>
+                           <th style={{ padding: "0.75rem", borderBottom: "2px solid #eee" }}>Humidity (%)</th>
+                           <th style={{ padding: "0.75rem", borderBottom: "2px solid #eee" }}>Motion</th>
+                           <th style={{ padding: "0.75rem", borderBottom: "2px solid #eee" }}>LED</th>
+                        </tr>
+                     </thead>
+                     <tbody>
+                        {logs.map((log, idx) => (
+                           <tr key={idx} style={{ borderBottom: "1px solid #f0f0f0" }}>
+                              <td style={{ padding: "0.75rem" }}>{new Date(log.timestamp).toLocaleString()}</td>
+                              <td style={{ padding: "0.75rem" }}>{log.temperature ?? "—"}</td>
+                              <td style={{ padding: "0.75rem" }}>{log.humidity ?? "—"}</td>
+                              <td style={{ padding: "0.75rem" }}>{log.motion_detected ? "✅" : "❌"}</td>
+                              <td style={{ padding: "0.75rem", display: "flex", justifyContent: "center", alignItems: "center", gap: "0.5rem" }}>
+                                 <span style={{ color: `rgb(${log.led_color?.join(",")})` }}>■</span>
+                                 {log.led_brightness ?? "—"}
+                              </td>
+                           </tr>
+                        ))}
+                     </tbody>
+                  </table>
                </div>
             )}
          </div>
