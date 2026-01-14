@@ -10,7 +10,7 @@ function AddClothes() {
    const [color, setColor] = useState("#ffffff");
    const [message, setMessage] = useState("");
 
-   const PI_URL = "https://mywardrobe.loca.lt"; // Raspberry Pi IP
+   const PI_URL = "http://mywardrobe.loca.lt"; // Raspberry Pi IP
 
    useEffect(() => {
       const fetchHumidity = async () => {
