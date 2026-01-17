@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { colors } from "../styles/theme";
 import Navbar from "../components/Navbar";
@@ -118,10 +118,6 @@ function Home() {
                if (item?.style) styles.add(item.style.toLowerCase());
             });
             setAvailableStyles([...styles]);
-            
-            console.log("All outfits fetched:", outfits);
-            console.log("Unique items count:", uniqueItems.length);
-            console.log("Available styles:", [...styles]);
          })
          .catch((err) => {
             console.error("Outfit fetch error:", err);
@@ -129,7 +125,7 @@ function Home() {
             setAllItems([]);
             setAvailableStyles(["all"]);
          });
-   }, []); 
+   }, []);  
 
    // ────────────────────────────────────────────────────────────────────────────────
    //  Clothing Categories & Heaviness
