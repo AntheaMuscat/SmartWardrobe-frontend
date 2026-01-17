@@ -25,16 +25,22 @@ function Home() {
    useEffect(() => {
       const apiKey = "152ed82b5242e33c5906ac1fd3372c22";
       const cacheKey = "weatherCache";
-      const cacheDuration = 10 * 60 * 1000;
+      const cacheDuration = 10 * 60 * 1000; // 10 minutes
 
       const cached = localStorage.getItem(cacheKey);
       if (cached) {
-         const parsed = JSON.parse(cached);
-         const isFresh = Date.now() - parsed.timestamp < cacheDuration;
-         if (isFresh) {
-            setWeatherData(parsed.data);
-            fetchAllOutfits(parsed.data.condition);
-            return;
+         try {
+            const parsed = JSON.parse(cached);
+            const isFresh = Date.now() - parsed.timestamp < cacheDuration;
+
+            if (isFresh && parsed.data) {
+               setWeatherData(parsed.data);
+               fetchAllOutfits(parsed.data.condition);
+               return; // ← important: exit early if we used cache
+            }
+         } catch (e) {
+            console.warn("Invalid weather cache format", e);
+            localStorage.removeItem(cacheKey); // clean broken cache
          }
       }
 
@@ -94,7 +100,7 @@ function Home() {
             setWeatherData(fallback);
             fetchAllOutfits(fallback.condition);
          });
-   }, []);
+   }, [fetchAllOutfits]);
 
 
    const fetchAllOutfits = useCallback((weatherCondition) => {
@@ -102,7 +108,7 @@ function Home() {
          .then((res) => res.json())
          .then((data) => {
             const outfits = data.outfits || [];
-            setAllOutfits(outfits);
+            // setAllOutfits(outfits);
 
             const flatItems = outfits.flat().filter(Boolean);
             const uniqueMap = new Map();
@@ -212,7 +218,7 @@ function Home() {
    const pickRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
    // Pick outfit based on current selectedStyle and weather
-   const pickWeatherAppropriateOutfit = (items, weatherCondition) => {
+   const pickWeatherAppropriateOutfit = useCallback((items, weatherCondition) => {
       if (!items || items.length === 0) {
          setOutfitData(null);
          return;
@@ -291,7 +297,7 @@ function Home() {
       );
 
       setOutfitData(newOutfit);
-   };
+   }, [selectedStyle, weatherData]);
 
 
    // Recompute outfit whenever selectedStyle, allItems, or weatherData changes
@@ -300,7 +306,7 @@ function Home() {
          console.log("useEffect triggered - recomputing for style:", selectedStyle);
          pickWeatherAppropriateOutfit(allItems, weatherData.condition);
       }
-   }, [selectedStyle, allItems, weatherData]);
+   }, [selectedStyle, allItems, weatherData, pickWeatherAppropriateOutfit]);
 
    const getWeatherSuggestion = (temp, condition) => {
       if (temp <= 18) return "❄️ Chilly day — layer up with a jacket or coat!";
