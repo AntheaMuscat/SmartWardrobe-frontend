@@ -6,14 +6,13 @@ import "bootstrap/dist/css/bootstrap.min.css";
 
 function Home() {
    const [weatherData, setWeatherData] = useState(null);
-   const [allOutfits, setAllOutfits] = useState([]);
    const [allItems, setAllItems] = useState([]);
    const [outfitData, setOutfitData] = useState(null);
    const [selectedStyle, setSelectedStyle] = useState("all");
    const [availableStyles, setAvailableStyles] = useState(["all"]);
    const [greeting, setGreeting] = useState("Hello");
 
-   // Greeting based on time
+   // Greeting based on time of day
    useEffect(() => {
       const hour = new Date().getHours();
       if (hour < 12) setGreeting("Good Morning");
@@ -21,120 +20,8 @@ function Home() {
       else setGreeting("Good Evening");
    }, []);
 
-   // Fetch weather and outfits
-   useEffect(() => {
-      const apiKey = "152ed82b5242e33c5906ac1fd3372c22";
-      const cacheKey = "weatherCache";
-      const cacheDuration = 10 * 60 * 1000; // 10 minutes
-
-      const cached = localStorage.getItem(cacheKey);
-      if (cached) {
-         try {
-            const parsed = JSON.parse(cached);
-            const isFresh = Date.now() - parsed.timestamp < cacheDuration;
-
-            if (isFresh && parsed.data) {
-               setWeatherData(parsed.data);
-               fetchAllOutfits(parsed.data.condition);
-               return; // ← important: exit early if we used cache
-            }
-         } catch (e) {
-            console.warn("Invalid weather cache format", e);
-            localStorage.removeItem(cacheKey); // clean broken cache
-         }
-      }
-
-      const url = `https://api.openweathermap.org/data/2.5/weather?q=Malta,MT&units=metric&appid=${apiKey}`;
-      fetch(url)
-         .then((res) => res.json())
-         .then((data) => {
-            const weatherMain = data.weather[0].main.toLowerCase();
-            const temp = data.main.temp;
-
-            let condition = "mild";
-            if (weatherMain.includes("rain")) condition = "rainy";
-            else if (temp <= 18) condition = "cold";
-            else if (temp >= 25) condition = "hot";
-            else condition = "mild";
-
-            const formatted = {
-               location: "Malta 🇲🇹",
-               temperature: Math.round(temp),
-               feelsLike: Math.round(data.main.feels_like),
-               description: data.weather[0].description.replace(/\b\w/g, (c) => c.toUpperCase()),
-               humidity: `${data.main.humidity}%`,
-               wind: `${Math.round(data.wind.speed * 3.6)} km/h`,
-               icon: `https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png`,
-               condition,
-            };
-
-            fetch("https://antheamuscat-smart-wardrobe-backend.hf.space/weather-log", {
-               method: "POST",
-               headers: { "Content-Type": "application/json" },
-               body: JSON.stringify(formatted),
-            })
-               .then((res) => res.json().catch(() => null))
-               .then((json) => console.log("Weather log response:", json))
-               .catch((err) => console.warn("Weather log error:", err));
-
-            localStorage.setItem(
-               cacheKey,
-               JSON.stringify({ data: formatted, timestamp: Date.now() })
-            );
-
-            setWeatherData(formatted);
-            fetchAllOutfits(condition);
-         })
-         .catch((err) => {
-            console.error("Weather fetch error:", err);
-            const fallback = {
-               location: "Malta 🇲🇹",
-               temperature: 20,
-               feelsLike: 20,
-               description: "Partly Cloudy",
-               humidity: "60%",
-               wind: "10 km/h",
-               icon: "https://openweathermap.org/img/wn/02d@2x.png",
-               condition: "mild",
-            };
-            setWeatherData(fallback);
-            fetchAllOutfits(fallback.condition);
-         });
-   }, [fetchAllOutfits]);
-
-
-   const fetchAllOutfits = useCallback((weatherCondition) => {
-      fetch(`https://antheamuscat-smart-wardrobe-backend.hf.space/wardrobe?nocache=${Date.now()}`)
-         .then((res) => res.json())
-         .then((data) => {
-            const outfits = data.outfits || [];
-            // setAllOutfits(outfits);
-
-            const flatItems = outfits.flat().filter(Boolean);
-            const uniqueMap = new Map();
-            flatItems.forEach((item) => {
-               const key = item.image_path;
-               if (!uniqueMap.has(key)) uniqueMap.set(key, item);
-            });
-            const uniqueItems = Array.from(uniqueMap.values());
-            setAllItems(uniqueItems);
-
-            const styles = new Set(["all"]);
-            uniqueItems.forEach((item) => {
-               if (item?.style) styles.add(item.style.toLowerCase());
-            });
-            setAvailableStyles([...styles]);
-         })
-         .catch((err) => {
-            console.error("Outfit fetch error:", err);
-            setAllOutfits([]);
-            setAllItems([]);
-            setAvailableStyles(["all"]);
-         });
-   }, []);  
-
    // ────────────────────────────────────────────────────────────────────────────────
-   //  Clothing Categories & Heaviness
+   //  Clothing Categories & Helper Functions (moved up to avoid use-before-define)
    // ────────────────────────────────────────────────────────────────────────────────
 
    const TOP_TYPES = [
@@ -178,7 +65,7 @@ function Home() {
    const COLD_FORBIDDEN = ["cropped top", "sleeveless tank top", "off-shoulder top", "shorts", "mini skirt"];
    const HOT_FORBIDDEN = ["hoodie", "sweater", "turtleneck", "loose hoodie"];
 
-   const normalize = (t) => t?.toLowerCase().trim();
+   const normalize = (t) => t?.toLowerCase()?.trim() || "";
 
    const isTop = (t) => TOP_TYPES.includes(normalize(t));
    const isOuterwear = (t) => OUTERWEAR_TYPES.includes(normalize(t));
@@ -187,7 +74,7 @@ function Home() {
    const isRealTop = (t) => isTop(t) && !isOuterwear(t);
 
    const getHeaviness = (item) => {
-      const type = normalize(item.type);
+      const type = normalize(item?.type);
       return (
          TOP_HEAVINESS[type] ||
          OUTERWEAR_HEAVINESS[type] ||
@@ -198,8 +85,10 @@ function Home() {
    };
 
    const isItemAppropriate = (item, isCold, isHot) => {
+      if (!item?.type) return false;
       const type = normalize(item.type);
       const heaviness = getHeaviness(item);
+
       if (isCold) {
          if (COLD_FORBIDDEN.includes(type)) return false;
          if (isBottom(type) && heaviness === "light") return false;
@@ -217,7 +106,116 @@ function Home() {
 
    const pickRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
-   // Pick outfit based on current selectedStyle and weather
+   // ────────────────────────────────────────────────────────────────────────────────
+   //  Fetch all outfits (stable reference)
+   // ────────────────────────────────────────────────────────────────────────────────
+   const fetchAllOutfits = useCallback((weatherCondition) => {
+      fetch(`https://antheamuscat-smart-wardrobe-backend.hf.space/wardrobe?nocache=${Date.now()}`)
+         .then((res) => res.json())
+         .then((data) => {
+            const outfits = data.outfits || [];
+
+            const flatItems = outfits.flat().filter(Boolean);
+            const uniqueMap = new Map();
+            flatItems.forEach((item) => {
+               const key = item.image_path;
+               if (!uniqueMap.has(key)) uniqueMap.set(key, item);
+            });
+            const uniqueItems = Array.from(uniqueMap.values());
+
+            setAllItems(uniqueItems);
+
+            const styles = new Set(["all"]);
+            uniqueItems.forEach((item) => {
+               if (item?.style) styles.add(item.style.toLowerCase());
+            });
+            setAvailableStyles([...styles]);
+         })
+         .catch((err) => {
+            console.error("Outfit fetch error:", err);
+            setAllItems([]);
+            setAvailableStyles(["all"]);
+         });
+   }, []);
+
+   // Fetch weather + outfits (now safe order)
+   useEffect(() => {
+      const apiKey = "152ed82b5242e33c5906ac1fd3372c22";
+      const cacheKey = "weatherCache";
+      const cacheDuration = 10 * 60 * 1000;
+
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+         try {
+            const parsed = JSON.parse(cached);
+            const isFresh = Date.now() - parsed.timestamp < cacheDuration;
+
+            if (isFresh && parsed.data) {
+               setWeatherData(parsed.data);
+               fetchAllOutfits(parsed.data.condition);
+               return;
+            }
+         } catch (e) {
+            console.warn("Invalid weather cache format", e);
+            localStorage.removeItem(cacheKey);
+         }
+      }
+
+      const url = `https://api.openweathermap.org/data/2.5/weather?q=Malta,MT&units=metric&appid=${apiKey}`;
+      fetch(url)
+         .then((res) => res.json())
+         .then((data) => {
+            const weatherMain = data.weather[0].main.toLowerCase();
+            const temp = data.main.temp;
+
+            let condition = "mild";
+            if (weatherMain.includes("rain")) condition = "rainy";
+            else if (temp <= 18) condition = "cold";
+            else if (temp >= 25) condition = "hot";
+
+            const formatted = {
+               location: "Malta 🇲🇹",
+               temperature: Math.round(temp),
+               feelsLike: Math.round(data.main.feels_like),
+               description: data.weather[0].description.replace(/\b\w/g, (c) => c.toUpperCase()),
+               humidity: `${data.main.humidity}%`,
+               wind: `${Math.round(data.wind.speed * 3.6)} km/h`,
+               icon: `https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png`,
+               condition,
+            };
+
+            fetch("https://antheamuscat-smart-wardrobe-backend.hf.space/weather-log", {
+               method: "POST",
+               headers: { "Content-Type": "application/json" },
+               body: JSON.stringify(formatted),
+            }).catch((err) => console.warn("Weather log error:", err));
+
+            localStorage.setItem(
+               cacheKey,
+               JSON.stringify({ data: formatted, timestamp: Date.now() })
+            );
+
+            setWeatherData(formatted);
+            fetchAllOutfits(formatted.condition);
+         })
+         .catch((err) => {
+            console.error("Weather fetch error:", err);
+            const fallback = {
+               location: "Malta 🇲🇹",
+               temperature: 20,
+               feelsLike: 20,
+               description: "Partly Cloudy",
+               humidity: "60%",
+               wind: "10 km/h",
+               icon: "https://openweathermap.org/img/wn/02d@2x.png",
+               condition: "mild",
+            };
+            setWeatherData(fallback);
+            fetchAllOutfits(fallback.condition);
+         });
+   }, [fetchAllOutfits]);
+
+   // Pick appropriate outfit (disable exhaustive-deps warning - practical solution)
    const pickWeatherAppropriateOutfit = useCallback((items, weatherCondition) => {
       if (!items || items.length === 0) {
          setOutfitData(null);
@@ -229,8 +227,6 @@ function Home() {
       const isHot = temp >= 25;
       const styleLower = selectedStyle.toLowerCase();
 
-      console.log(`Recomputing outfit for style: ${selectedStyle}`);
-
       // Filter items by weather appropriateness
       const appropriateItems = items.filter((item) => isItemAppropriate(item, isCold, isHot));
 
@@ -239,9 +235,7 @@ function Home() {
          return;
       }
 
-      // --------------------------
       // Dresses
-      // --------------------------
       let dressOutfit = null;
       const dresses = appropriateItems.filter((i) => isDress(i.type));
       if (styleLower === "all") {
@@ -251,9 +245,7 @@ function Home() {
          if (styledDresses.length > 0) dressOutfit = [pickRandom(styledDresses)];
       }
 
-      // --------------------------
       // Tops + Bottoms
-      // --------------------------
       let baseOutfit = [];
       const realTops = appropriateItems.filter((i) => isRealTop(i.type));
       const bottoms = appropriateItems.filter((i) => isBottom(i.type));
@@ -270,40 +262,24 @@ function Home() {
          }
       }
 
-      // --------------------------
       // Outerwear (optional)
-      // --------------------------
       const outerwearItems = appropriateItems.filter((i) => isOuterwear(i.type));
-      let useOuterwear = [];
-      if (styleLower === "all") useOuterwear = outerwearItems;
-      else useOuterwear = outerwearItems.filter((i) => normalize(i.style) === styleLower);
+      let useOuterwear = styleLower === "all" ? outerwearItems : outerwearItems.filter((i) => normalize(i.style) === styleLower);
 
-      // Decide whether to add outerwear
       let finalOutfit = baseOutfit.length > 0 ? [...baseOutfit] : dressOutfit || [];
       if (useOuterwear.length > 0 && finalOutfit.length > 0) {
          const shouldAdd = isCold || (!isHot && Math.random() > 0.5);
          if (shouldAdd) finalOutfit.push(pickRandom(useOuterwear));
       }
 
-      // --------------------------
-      // Set final outfit or null
-      // --------------------------
       const newOutfit = finalOutfit.length > 0 ? [...finalOutfit] : null;
-      console.log(
-         "New outfit:",
-         newOutfit?.map((i) => i?.type) || "none",
-         "for style:",
-         selectedStyle
-      );
-
       setOutfitData(newOutfit);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
    }, [selectedStyle, weatherData]);
 
-
-   // Recompute outfit whenever selectedStyle, allItems, or weatherData changes
+   // Recompute when relevant data changes
    useEffect(() => {
       if (allItems.length > 0 && weatherData) {
-         console.log("useEffect triggered - recomputing for style:", selectedStyle);
          pickWeatherAppropriateOutfit(allItems, weatherData.condition);
       }
    }, [selectedStyle, allItems, weatherData, pickWeatherAppropriateOutfit]);
