@@ -123,15 +123,6 @@ function Wardrobe() {
          console.error("Delete failed:", err);
       }
    };
-
-   const capitalizeWords = (text) =>
-      text
-         ? text
-            .toLowerCase()
-            .replace(/\b\w/g, (char) => char.toUpperCase())
-            .replace(/\s+/g, " ")
-         : "";
-
    const formatDate = (dateStr) => {
       if (!dateStr) return "N/A";
       const date = new Date(dateStr);

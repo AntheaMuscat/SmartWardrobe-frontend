@@ -106,7 +106,6 @@ function Outfits() {
                                  // pair may be legacy array [top, bottom] or new object {items, suggested_shoes, suggested_accessories}
                                  const isObject = pair && !Array.isArray(pair) && pair.items;
                                  const items = isObject ? pair.items : pair;
-                                 // support legacy arrays and new single-item keys
                                  const shoes = isObject ? (pair.suggested_shoes ? (Array.isArray(pair.suggested_shoes) ? pair.suggested_shoes[0] : pair.suggested_shoe) : pair.suggested_shoe) : null;
                                  const accessories = isObject ? (pair.suggested_accessories ? (Array.isArray(pair.suggested_accessories) ? pair.suggested_accessories[0] : pair.suggested_accessory) : pair.suggested_accessory) : null;
 
@@ -181,7 +180,7 @@ function Outfits() {
                                           </p>
                                        </div>
 
-                                       {/* Per-outfit suggested shoe (single) */}
+                                       {/* Shoe Sugegstions */}
                                        {shoes && (
                                           <div style={{ marginTop: 16 }}>
                                              <h6 style={{ color: colors.primary, marginBottom: 8 }}>Recommended Shoe</h6>
@@ -195,7 +194,7 @@ function Outfits() {
                                           </div>
                                        )}
 
-                                       {/* Per-outfit suggested accessory (single) */}
+                                       {/* Accessory Suggestion */}
                                        {accessories && (
                                           <div style={{ marginTop: 12 }}>
                                              <h6 style={{ color: colors.primary, marginBottom: 8 }}>Recommended Accessory</h6>
@@ -214,107 +213,13 @@ function Outfits() {
                            </div>
                         </div>
                      )}
-
-                     {/* Suggested Shoes */}
-                     {data.suggested_shoes?.length > 0 && (
-                        <div className="mb-4">
-                           <h4 style={{ color: colors.primary, marginBottom: "1rem" }}>
-                              Suggested Shoes 👟
-                           </h4>
-                           <div
-                              className="d-grid"
-                              style={{
-                                 gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
-                                 gap: "20px",
-                              }}
-                           >
-                              {data.suggested_shoes.map((shoe, index) => (
-                                 <motion.div
-                                    key={index}
-                                    className="p-3 rounded-4 text-center"
-                                    style={{
-                                       backgroundColor: "white",
-                                       boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                                       transition: "all 0.3s ease",
-                                    }}
-                                    whileHover={{ scale: 1.05 }}
-                                 >
-                                    <img
-                                       src={shoe.image_path}
-                                       alt={shoe.type}
-                                       className="img-fluid rounded-3 mb-2"
-                                       style={{
-                                          height: "180px",
-                                          objectFit: "contain",
-                                          backgroundColor: "#f8f9fa",
-                                       }}
-                                    />
-                                    <p className="mb-1 fw-bold" style={{ fontSize: "1rem" }}>
-                                       {capitalizeWords(shoe.type)}
-                                    </p>
-                                    <p className="text-muted mb-0" style={{ fontSize: "0.85rem" }}>
-                                       {capitalizeWords(shoe.colour)}
-                                    </p>
-                                 </motion.div>
-                              ))}
-                           </div>
-                        </div>
+                     {/* Fallback message if no core outfits */}
+                     {!data.core_outfits?.length && (
+                        <p className="text-muted text-center">
+                           No suggestions for this style yet — add more items!
+                        </p>
                      )}
 
-                     {/* Suggested Accessories */}
-                     {data.suggested_accessories?.length > 0 && (
-                        <div>
-                           <h4 style={{ color: colors.primary, marginBottom: "1rem" }}>
-                              Suggested Accessories 👜
-                           </h4>
-                           <div
-                              className="d-grid"
-                              style={{
-                                 gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
-                                 gap: "15px",
-                              }}
-                           >
-                              {data.suggested_accessories.map((acc, index) => (
-                                 <motion.div
-                                    key={index}
-                                    className="p-3 rounded-4 text-center"
-                                    style={{
-                                       backgroundColor: "white",
-                                       boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                                       transition: "all 0.3s ease",
-                                    }}
-                                    whileHover={{ scale: 1.05 }}
-                                 >
-                                    <img
-                                       src={acc.image_path}
-                                       alt={acc.type}
-                                       className="img-fluid rounded-3 mb-2"
-                                       style={{
-                                          height: "140px",
-                                          objectFit: "contain",
-                                          backgroundColor: "#f8f9fa",
-                                       }}
-                                    />
-                                    <p className="mb-1 fw-bold" style={{ fontSize: "0.9rem" }}>
-                                       {capitalizeWords(acc.type)}
-                                    </p>
-                                    <p className="text-muted mb-0" style={{ fontSize: "0.8rem" }}>
-                                       {capitalizeWords(acc.colour)}
-                                    </p>
-                                 </motion.div>
-                              ))}
-                           </div>
-                        </div>
-                     )}
-
-                     {/* Fallback message if no suggestions */}
-                     {!data.core_outfits?.length &&
-                        !data.suggested_shoes?.length &&
-                        !data.suggested_accessories?.length && (
-                           <p className="text-muted text-center">
-                              No suggestions for this style yet — add more items!
-                           </p>
-                        )}
                   </motion.div>
                ))}
             </div>

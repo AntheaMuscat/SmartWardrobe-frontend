@@ -12,12 +12,13 @@ function AddClothes() {
 
    const PI_URL = "http://172.20.206.140:8000"; // Raspberry Pi IP
 
+   //Humidity
    useEffect(() => {
       const fetchHumidity = async () => {
          try {
             const res = await fetch(`${PI_URL}/humidity`);
             const data = await res.json();
-            setHumidityData(data);
+            setHumidityData(data); 
          } catch (err) {
             console.error(err);
          }
@@ -27,13 +28,14 @@ function AddClothes() {
       const interval = setInterval(fetchHumidity, 30000); // every 30 seconds
       return () => clearInterval(interval);
    }, []);
-
+   
+   // Capture Image
    const captureImage = async () => {
       let seconds = 5;
       const toastId = toast.info(`Taking picture in ${seconds}...`, {
          autoClose: false,
       });
-
+      // timer
       const countdown = setInterval(() => {
          seconds--;
          if (seconds > 0) {
@@ -41,13 +43,13 @@ function AddClothes() {
                render: `Taking picture in ${seconds}...`,
             });
          } else {
-            clearInterval(countdown);
+            clearInterval(countdown); // stop timer at 0
          }
       }, 1000);
 
       try {
-         await new Promise((resolve) => setTimeout(resolve, 5000));
-         const res = await fetch(`${PI_URL}/capture`, { method: "POST" });
+         await new Promise((resolve) => setTimeout(resolve, 5000)); // wait 5 seconds
+         const res = await fetch(`${PI_URL}/capture`, { method: "POST" }); // trigger pi capture
          const data = await res.json();
          setMessage(`Captured: ${data.file}`);
 
@@ -70,7 +72,7 @@ function AddClothes() {
    };
 
    const setLed = async (newColor = color, newBrightness = brightness) => {
-      // 👈 Convert hex to RGB BEFORE sending
+      // Convert hex to RGB BEFORE sending
       const rgb = hexToRgb(newColor || color);
       setColor(newColor || color);
       setBrightness(newBrightness);
@@ -80,22 +82,21 @@ function AddClothes() {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-               color: rgb,  // 👈 Always RGB array [255,0,0]
+               color: rgb,  // RGB array [255,0,0]
                brightness: newBrightness
             }),
          });
 
          if (!response.ok) throw new Error('LED update failed');
-         toast.success("LED updated! ✨");
+         toast.success("LED updated!");
       } catch (err) {
          console.error("LED Error:", err);
          toast.error("Failed to update LED. Check Pi connection.");
       }
    };
 
-   // Move hexToRgb above the return (it's already there but ensure it's called)
    const hexToRgb = (hex) => {
-      const bigint = parseInt(hex.slice(1), 16);
+      const bigint = parseInt(hex.slice(1), 16); // remove #
       return [
          (bigint >> 16) & 255,  // R
          (bigint >> 8) & 255,   // G
@@ -159,7 +160,7 @@ function AddClothes() {
                      (e.currentTarget.style.backgroundColor = colors.primary)
                   }
                >
-                  📷 Capture Clothing
+                  📸 Capture Clothing
                </button>
             </div>
 

@@ -173,7 +173,6 @@ function Analytics() {
                      </div>
                   </motion.div>
 
-                  {/* Favorite Styles */}
                   <motion.div
                      className="col-lg-6"
                      initial={{ opacity: 0, y: 40 }}
