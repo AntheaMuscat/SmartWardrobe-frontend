@@ -182,6 +182,7 @@ function CalendarPage() {
       setEndMinute(0);
    };
 
+   // Confirm time + outfit → local + Google Calendar
    const handleConfirmOutfit = useCallback(
       async () => {
          if (!selectedDate || !selectedItem) return;
@@ -214,7 +215,7 @@ function CalendarPage() {
                credentials: "include",
                body: JSON.stringify({
                   item: outfitName,
-                  date: format(selectedDate, "yyyy-MM-dd"), 
+                  date: format(selectedDate, "yyyy-MM-dd"), // still sent, unused now but harmless
                   start: start.toISOString(),
                   end: end.toISOString(),
                   image_url: selectedItem.image_path,
@@ -238,7 +239,7 @@ function CalendarPage() {
       ]
    );
 
-   // Delete event locally and from Google Calendar
+   // Delete event locally + Google Calendar
    const handleDelete = useCallback(
       async (event) => {
          // Remove from local UI

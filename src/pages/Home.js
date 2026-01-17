@@ -127,7 +127,9 @@ function Home() {
          });
    };
 
+   // ────────────────────────────────────────────────────────────────────────────────
    //  Clothing Categories & Heaviness
+   // ────────────────────────────────────────────────────────────────────────────────
 
    const TOP_TYPES = [
       "t-shirt", "long-sleeve t-shirt", "sleeveless tank top", "blouse",
@@ -231,7 +233,9 @@ function Home() {
          return;
       }
 
+      // --------------------------
       // Dresses
+      // --------------------------
       let dressOutfit = null;
       const dresses = appropriateItems.filter((i) => isDress(i.type));
       if (styleLower === "all") {
@@ -241,7 +245,9 @@ function Home() {
          if (styledDresses.length > 0) dressOutfit = [pickRandom(styledDresses)];
       }
 
-      // Tops and Bottoms
+      // --------------------------
+      // Tops + Bottoms
+      // --------------------------
       let baseOutfit = [];
       const realTops = appropriateItems.filter((i) => isRealTop(i.type));
       const bottoms = appropriateItems.filter((i) => isBottom(i.type));
@@ -258,7 +264,9 @@ function Home() {
          }
       }
 
+      // --------------------------
       // Outerwear (optional)
+      // --------------------------
       const outerwearItems = appropriateItems.filter((i) => isOuterwear(i.type));
       let useOuterwear = [];
       if (styleLower === "all") useOuterwear = outerwearItems;
@@ -271,7 +279,9 @@ function Home() {
          if (shouldAdd) finalOutfit.push(pickRandom(useOuterwear));
       }
 
+      // --------------------------
       // Set final outfit or null
+      // --------------------------
       const newOutfit = finalOutfit.length > 0 ? [...finalOutfit] : null;
       console.log(
          "New outfit:",
