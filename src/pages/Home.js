@@ -97,8 +97,7 @@ function Home() {
    }, []);
 
 
-   // Fetch all outfits from backend
-   const fetchAllOutfits = (weatherCondition) => {
+   const fetchAllOutfits = useCallback((weatherCondition) => {
       fetch(`https://antheamuscat-smart-wardrobe-backend.hf.space/wardrobe?nocache=${Date.now()}`)
          .then((res) => res.json())
          .then((data) => {
@@ -119,15 +118,18 @@ function Home() {
                if (item?.style) styles.add(item.style.toLowerCase());
             });
             setAvailableStyles([...styles]);
+            
+            console.log("All outfits fetched:", outfits);
+            console.log("Unique items count:", uniqueItems.length);
+            console.log("Available styles:", [...styles]);
          })
          .catch((err) => {
             console.error("Outfit fetch error:", err);
             setAllOutfits([]);
             setAllItems([]);
+            setAvailableStyles(["all"]);
          });
-      console.log("All outfits fetched:", allOutfits);
-
-   };
+   }, []); 
 
    // ────────────────────────────────────────────────────────────────────────────────
    //  Clothing Categories & Heaviness

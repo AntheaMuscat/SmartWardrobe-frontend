@@ -109,7 +109,7 @@ function CalendarPage() {
    }, []);
    useEffect(() => {
       loadGoogleEvents();
-   }, [loadGoogleEvents, navigate, location.search]);
+   }, [loadGoogleEvents]);
 
    const location = useLocation();
    const navigate = useNavigate();
@@ -148,7 +148,7 @@ function CalendarPage() {
          alert(`Added ${parsedItems.length} outfits to today's calendar!`);
          setTimeout(() => navigate("/calendar"), 500);
       }
-   }, [location.search]);
+   }, [location.search, loadGoogleEvents, navigate]);
 
 
    // Load wardrobe from backend
