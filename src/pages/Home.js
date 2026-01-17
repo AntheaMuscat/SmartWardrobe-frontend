@@ -125,6 +125,8 @@ function Home() {
             setAllOutfits([]);
             setAllItems([]);
          });
+      console.log("All outfits fetched:", allOutfits);
+
    };
 
    // ────────────────────────────────────────────────────────────────────────────────

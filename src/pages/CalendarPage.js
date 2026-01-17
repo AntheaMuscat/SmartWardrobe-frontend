@@ -109,7 +109,7 @@ function CalendarPage() {
    }, []);
    useEffect(() => {
       loadGoogleEvents();
-   }, [loadGoogleEvents]);
+   }, [loadGoogleEvents, navigate, location.search]);
 
    const location = useLocation();
    const navigate = useNavigate();
